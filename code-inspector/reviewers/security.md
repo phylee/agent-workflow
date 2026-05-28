@@ -69,8 +69,11 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
       "type": "",
       "severity": "critical|high|medium|low",
       "category": "input|auth|data|storage|network|browser|dependency|infra",
+      "confidence": 0.0,
+      "deterministic": true,
+      "source": "",
       "cwe_id": "",
-      "source_tool": "semgrep",
+      "evidence_chain": [],
       "location": "",
       "description": "",
       "remediation": ""

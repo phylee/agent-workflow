@@ -73,11 +73,15 @@ For the main algorithm paths in the changed code, estimate:
   "anti_patterns": [
     {
       "type": "",
+      "type": "",
       "severity": "critical|high|medium|low",
-      "evidence": "",
+      "confidence": 0.0,
+      "deterministic": false,
+      "source": "llm-inference",
+      "evidence_chain": [],
+      "location": "",
       "mechanism": "",
-      "fix": "",
-      "location": ""
+      "fix": ""
     }
   ],
   "complexity_analysis": {

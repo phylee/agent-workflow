@@ -36,9 +36,13 @@ Check whether the code produces useful diagnostic signals for production debuggi
   "issues": [
     {
       "severity": "critical|high|medium|low",
+      "confidence": 0.0,
+      "deterministic": false,
+      "source": "llm-inference",
       "file": "",
       "line": 0,
       "type": "wrong_level|string_interpolation|pii_leak|missing_trace_id|console_log|missing_metric",
+      "evidence_chain": [],
       "message": "",
       "suggestion": ""
     }

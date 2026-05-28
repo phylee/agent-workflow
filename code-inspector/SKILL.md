@@ -86,21 +86,28 @@ Output the classification:
 
 ### Step 4: Dispatch to Reviewers
 
-For each reviewer in `activated_reviewers`, read its file at `reviewers/<name>.md` and apply its instructions. Each reviewer is ~50 lines and focused on one dimension. Only load activated reviewers.
+For each reviewer in `activated_reviewers`, read its file at `reviewers/<name>.md` and apply its instructions. Only load activated reviewers.
 
-Apply the `service_type`'s extra checks (from `references/classification-guide.md`) as additional lenses on top of the base reviewer instructions. For example, an `api` service type means the security reviewer should emphasize auth/rate-limit/input validation; a `worker` service type means the error_handling reviewer should emphasize retry/idempotency/DLQ.
+Apply the `service_type`'s extra checks from `references/classification-guide.md`.
+
+Every finding from every reviewer must include:
+- `confidence` (0.0-1.0): tool-verified = 0.9+, heuristic = 0.5-0.7, speculative = <0.5
+- `deterministic` (true/false): from a tool (Semgrep, ESLint, AST) = true; LLM inference = false
+- `evidence_chain` (ordered list): trace from input → dataflow → unsafe sink → impact
 
 ### Step 5: Aggregate Results
 
-Combine each reviewer's output into the final `code_review_result` JSON. Read `references/output-schema.md` for the exact structure. Root key is `code_review_result`.
+Combine all reviewer findings into `inspections[]` — a flat list where each item has `category`, `type`, `confidence`, `deterministic`, `source`, `evidence_chain`.
 
-Set `applicable: false` and `score: 100` for any dimension whose reviewer was not activated.
+Populate `coverage` with assertion density and mutation score from the test reviewer.
+Populate `gates` based on gate rules.
+Calculate `summary` scores per dimension.
 
-Calculate `overall_score` using the weight table in `references/output-schema.md`. Apply any service-type weight adjustments from `references/classification-guide.md`. User-specified `focus_areas` get 2x weight. Conditional dimensions that were skipped have their weight redistributed.
+Read `references/output-schema.md` for the exact structure. Root key is `code_inspector_result`.
 
 ### Step 6: Summarize
 
-After the JSON, output a 3-5 sentence human-readable summary highlighting the most important findings — the things that would block deployment or warrant immediate attention.
+After the JSON, output a one-line gate verdict: "Merge blocked: <reasons>" or "Merge allowed with <N> warnings". Then 2-3 sentences on the most impactful findings.
 
 ## Parameters
 

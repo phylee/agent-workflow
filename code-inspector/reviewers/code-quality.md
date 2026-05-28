@@ -74,9 +74,13 @@ After processing the tool output, also check for issues that linters CAN'T catch
     {
       "severity": "critical|high|medium|low",
       "category": "bug-risk|style|complexity|anti-pattern|dead-code",
+      "confidence": 0.0,
+      "deterministic": true,
+      "source": "",
       "file": "",
       "line": 0,
       "rule_id": "B007",
+      "evidence_chain": [],
       "message": "",
       "suggestion": ""
     }

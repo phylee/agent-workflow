@@ -89,6 +89,8 @@ Flag tests that look like E2E but aren't:
     "quality_issues": [],
     "mutation_testing": {
       "tool_used": "",
+      "confidence": 0.95,
+      "deterministic": true,
       "mutants_total": 0,
       "mutants_killed": 0,
       "mutants_survived": 0,
@@ -98,7 +100,10 @@ Flag tests that look like E2E but aren't:
           "location": "",
           "mutation": "",
           "why_survived": "",
-          "test_to_add": ""
+          "test_to_add": "",
+          "confidence": 0.95,
+          "deterministic": true,
+          "source": ""
         }
       ]
     }

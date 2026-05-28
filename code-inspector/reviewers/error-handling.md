@@ -41,9 +41,13 @@ Examine how the code deals with failure — distinct from testing, this is about
   "issues": [
     {
       "severity": "critical|high|medium|low",
+      "confidence": 0.0,
+      "deterministic": false,
+      "source": "llm-inference",
       "file": "",
       "line": 0,
       "type": "swallowed_error|missing_context|bare_except|missing_retry|resource_leak|no_fallback",
+      "evidence_chain": [],
       "message": "",
       "suggestion": ""
     }
