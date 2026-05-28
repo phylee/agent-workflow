@@ -1,0 +1,5 @@
+code-inspector/code-inspector-workspace/
+__pycache__/
+*.pyc
+.DS_Store
+.claude
