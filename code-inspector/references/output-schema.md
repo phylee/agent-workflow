@@ -13,12 +13,15 @@ The code review output MUST use this exact JSON structure. All fields are requir
     },
     "code_quality": {
       "score": 0,
+      "tool_used": "",
+      "tool_findings_count": 0,
       "issues": [
         {
           "severity": "critical|high|medium|low",
-          "category": "naming|structure|complexity|readability",
+          "category": "bug-risk|style|complexity|anti-pattern|dead-code",
           "file": "",
           "line": 0,
+          "rule_id": "",
           "message": "",
           "suggestion": ""
         }
@@ -197,17 +200,17 @@ The code review output MUST use this exact JSON structure. All fields are requir
 - `review_timestamp`: ISO 8601 timestamp of the review
 
 ### code_quality
-- `score`: 0-100, weighted average of standards compliance and issue severity
-- `issues[]`: List of code quality problems found
-  - `severity`: How urgently this should be fixed
-  - `category`: The dimension of quality affected
+- `score`: 0-100. 95+ if lint tool passes clean. Capped at 80 for prompt-based fallback.
+- `tool_used`: Name and version of the static analysis tool (e.g., `"ruff 0.13.2"`) or `"none (prompt-based fallback)"`
+- `tool_findings_count`: Raw lint findings count before merging/deduplication
+- `issues[]`: LLM-interpreted findings (classified, merged, explained)
+  - `severity`: Actual impact-based severity (may differ from tool's default level)
+  - `category`: `bug-risk` (likely incorrect behavior), `style` (cosmetic), `complexity` (maintainability risk), `anti-pattern` (fragile but functional), `dead-code` (unused/unreachable)
+  - `rule_id`: The lint tool's rule identifier (e.g., `B007`, `no-unused-vars`, `errcheck`)
   - `file`/`line`: Where the issue is located
-  - `message`: What's wrong
+  - `message`: Human-language explanation of the issue
   - `suggestion`: How to fix it
-- `standards_compliance`: Percentage scores (0-100) for each sub-dimension
-  - `pep8_eslint_etc`: Compliance with the primary language style guide
-  - `naming_conventions`: Whether names follow language conventions
-  - `code_structure`: Whether code is well-organized
+- `standards_compliance`: Percentage scores (0-100) for each sub-dimension, inferred from tool output
 
 ### test_coverage
 - `score`: 0-100
