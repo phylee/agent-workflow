@@ -35,9 +35,28 @@ The code review output MUST use this exact JSON structure. All fields are requir
     "test_coverage": {
       "score": 0,
       "unit_test": {
+        "test_files_found": 0,
+        "total_tests": 0,
+        "total_assertions": 0,
+        "assertions_per_test": 0,
         "coverage_percentage": 0,
         "missing_cases": [],
-        "quality_issues": []
+        "quality_issues": [],
+        "mutation_testing": {
+          "tool_used": "",
+          "mutants_total": 0,
+          "mutants_killed": 0,
+          "mutants_survived": 0,
+          "mutation_score": 0,
+          "surviving_mutations": [
+            {
+              "location": "",
+              "mutation": "",
+              "why_survived": "",
+              "test_to_add": ""
+            }
+          ]
+        }
       },
       "api_test": {
         "endpoints_tested": 0,
@@ -45,8 +64,17 @@ The code review output MUST use this exact JSON structure. All fields are requir
         "missing_scenarios": []
       },
       "e2e_test": {
-        "critical_paths_covered": 0,
-        "total_critical_paths": 0,
+        "critical_journeys": [
+          {
+            "journey": "",
+            "covered": false,
+            "happy_path": false,
+            "error_path": false,
+            "pseudo_e2e_risk": true,
+            "gap_description": ""
+          }
+        ],
+        "score": 0,
         "gaps": []
       }
     },
@@ -56,9 +84,10 @@ The code review output MUST use this exact JSON structure. All fields are requir
         {
           "type": "",
           "severity": "critical|high|medium",
-          "location": "",
-          "impact": "",
-          "optimization": ""
+          "evidence": "",
+          "mechanism": "",
+          "fix": "",
+          "location": ""
         }
       ],
       "complexity_analysis": {
@@ -136,14 +165,21 @@ The code review output MUST use this exact JSON structure. All fields are requir
     "api_design": {
       "applicable": true,
       "score": 0,
+      "contract_type": "openapi|graphql|protobuf|implicit",
+      "contract_diff": {
+        "tool_used": "",
+        "breaking_changes": 0,
+        "warnings": 0
+      },
       "issues": [
         {
           "severity": "critical|high|medium|low",
           "file": "",
           "line": 0,
-          "type": "breaking_change|inconsistent_signature|missing_idempotency|poor_naming|bool_parameter_smell|too_many_params",
+          "type": "breaking_change|inconsistent_signature|missing_idempotency|poor_naming|bool_parameter_smell|too_many_params|sensitive_field_leak|missing_validation|missing_pagination|missing_rate_limit",
           "message": "",
-          "suggestion": ""
+          "suggestion": "",
+          "migration_path": ""
         }
       ]
     },
@@ -162,17 +198,31 @@ The code review output MUST use this exact JSON structure. All fields are requir
     },
     "security": {
       "score": 0,
+      "sast_tools_used": [],
+      "findings_raw": 0,
       "vulnerabilities": [
         {
           "type": "",
           "severity": "critical|high|medium|low",
+          "category": "input|auth|data|storage|network|browser|dependency|infra",
           "cwe_id": "",
+          "source_tool": "",
           "location": "",
           "description": "",
           "remediation": ""
         }
       ],
-      "dependency_issues": [],
+      "dependency_issues": [
+        {
+          "package": "",
+          "current_version": "",
+          "fixed_version": "",
+          "cve_id": "",
+          "severity": "",
+          "reachable": true,
+          "advisory": ""
+        }
+      ],
       "compliance": {
         "owasp_top10": true,
         "data_privacy": true
@@ -213,30 +263,28 @@ The code review output MUST use this exact JSON structure. All fields are requir
 - `standards_compliance`: Percentage scores (0-100) for each sub-dimension, inferred from tool output
 
 ### test_coverage
-- `score`: 0-100
+- `score`: 0-100. Mutation score overrides coverage percentage. No tests = 0.
 - `unit_test`: Unit test analysis
-  - `coverage_percentage`: Estimated or reported test coverage (0-100)
-  - `missing_cases[]`: Strings describing untested scenarios
-  - `quality_issues[]`: Strings describing test quality problems (weak assertions, over-mocking, etc.)
+  - `test_files_found`: Number of test files that exist
+  - `total_tests`/`total_assertions`/`assertions_per_test`: Assertion density metrics — <1 = decorative tests, <3 = minimal, >=5 = reasonable
+  - `coverage_percentage`: Informational only — do not trust as quality signal
+  - `mutation_testing`: Deterministic test quality via mutation injection
+    - `tool_used`: e.g., `"stryker 8.2"`, `"mutmut 3.1"`, or `"none (not available)"`
+    - `mutants_total`/`mutants_killed`/`mutants_survived`: Mutation counts
+    - `mutation_score`: `killed / total * 100` — the actual test effectiveness percentage
+    - `surviving_mutations[]`: Each surviving mutation with explanation and remediation
 - `api_test`: API/integration test analysis (only if applicable)
-  - `endpoints_tested`/`total_endpoints`: Coverage counts
-  - `missing_scenarios[]`: Untested API scenarios
-- `e2e_test`: End-to-end test analysis (only if applicable)
-  - `critical_paths_covered`/`total_critical_paths`: Coverage counts
-  - `gaps[]`: Descriptions of missing E2E coverage
+- `e2e_test`: User journey coverage — `critical_journeys[]` with `journey`, `covered`, `happy_path`, `error_path`, `pseudo_e2e_risk` (detects page-visit-only or fully-mocked E2E), `gap_description`
 
 ### performance
 - `score`: 0-100
-- `anti_patterns[]`: Performance issues found
-  - `type`: Category (e.g., "N+1 query", "memory leak", "blocking I/O")
-  - `severity`: impact severity
-  - `location`: File/function reference
-  - `impact`: What the performance consequence is
-  - `optimization`: How to fix it
-- `complexity_analysis`: Algorithm analysis
-  - `time_complexity`: Big-O notation for the primary algorithm
-  - `space_complexity`: Big-O notation for space usage
-  - `bottlenecks[]`: Specific bottleneck locations
+- `anti_patterns[]`: Performance issues with mandatory evidence
+  - `type`: Category (e.g., "N+1 query", "nested loop O(n²)", "sync IO in async context")
+  - `severity`: Impact severity — critical (will cause outage under load), high (significant degradation), medium (noticeable in production), low (minor)
+  - `evidence`: Exact code location proving the pattern exists
+  - `mechanism`: Why this causes performance degradation (e.g., "for 1000 users, executes 1,000,000 queries")
+  - `fix`: Concrete optimization with code example
+- `complexity_analysis`: Big-O estimates, bottlenecks ranked by impact
 
 ### database
 - `applicable`: true if database-related code was detected (SQL files, migrations, ORM models, query builders), false if no DB code present
@@ -271,12 +319,13 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `message`/`suggestion`: What's wrong and how to fix it
 
 ### api_design
-- `applicable`: true if public function signatures, HTTP endpoints, or library interfaces were added/modified, false if purely internal
+- `applicable`: true if public function signatures, HTTP endpoints, RPC, or library interfaces were added/modified
 - `score`: 0-100 (set to 100 if `applicable: false`)
+- `contract_type`: `openapi`, `graphql`, `protobuf`, or `implicit` (inferred from code)
+- `contract_diff`: Results from schema diff tool — `tool_used`, `breaking_changes` count, `warnings` count
 - `issues[]`: API design problems found
-  - `type`: `breaking_change`, `inconsistent_signature`, `missing_idempotency`, `poor_naming`, `bool_parameter_smell`, `too_many_params`
-  - `file`/`line`: Where the issue is located
-  - `message`/`suggestion`: What's wrong and how to fix it
+  - `type`: `breaking_change`, `sensitive_field_leak`, `missing_validation`, `missing_pagination`, `missing_rate_limit`, plus previous types
+  - `migration_path`: If breaking, a concrete deprecation/migration strategy
 
 ### logging
 - `score`: 0-100
@@ -286,18 +335,14 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `message`/`suggestion`: What's wrong and how to fix it
 
 ### security
-- `score`: 0-100
-- `vulnerabilities[]`: Security issues found
-  - `type`: Vulnerability category (e.g., "SQL Injection", "XSS", "Sensitive Data Exposure")
-  - `severity`: Risk level
-  - `cwe_id`: Common Weakness Enumeration ID (e.g., "CWE-89" for SQL injection)
-  - `location`: Where the vulnerability exists
-  - `description`: What the vulnerability is and why it's dangerous
-  - `remediation`: Concrete steps to fix it
-- `dependency_issues[]`: Known-vulnerable or deprecated dependencies
-- `compliance`: Boolean flags for major compliance categories
-  - `owasp_top10`: true if no OWASP Top 10 issues found
-  - `data_privacy`: true if no data privacy concerns found
+- `score`: 0-100. Capped at 70 if no SAST tools were run (AI-only assessment).
+- `sast_tools_used[]`: Tools run (e.g., `["semgrep 1.x", "trivy 0.x"]`). Empty = AI-only.
+- `findings_raw`: Count before triage/deduplication.
+- `vulnerabilities[]`: Triaged findings
+  - `category`: Security surface classification — `input`, `auth`, `data`, `storage`, `network`, `browser`, `dependency`, `infra`
+  - `source_tool`: Which tool found it (for auditability)
+- `dependency_issues[]`: Each with `reachable` flag — is the vulnerable code actually exercised?
+- `compliance`: `owasp_top10` false if any OWASP category violated; `data_privacy` false if PII handling issues found
 
 ### overall_score
 0-100, weighted average of all applicable category scores using these default weights:

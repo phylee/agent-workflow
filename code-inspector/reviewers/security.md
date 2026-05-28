@@ -1,63 +1,92 @@
 # Security Reviewer
 
-Apply OWASP Top 10 awareness and language-specific vulnerability patterns.
+**Principle**: AI should not independently judge security — it should run SAST tools for deterministic detection, then triage, explain, and prioritize the results. AI without tool backing produces inconsistent security reviews.
 
-## Checks
+## Step 1: Classify the Security Surface
 
-### Injection (A03)
-- **SQL injection**: String concatenation/interpolation building queries — `f"SELECT ... WHERE id = {user_id}"`. Parameterized queries required.
-- **Command injection**: `os.system()`, `exec.Command()`, `subprocess.call(shell=True)` with user input.
-- **LDAP/XPath/XXE**: Flag dynamic LDAP filters, XPath injection, XML parsing without `resolve_entity=False`.
+First, categorize what needs to be checked based on the changed code:
 
-### XSS (A03)
-- `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, `document.write()` with user data.
-- Missing output encoding in server-rendered templates.
-- `eval()`, `new Function()` with dynamic input.
+| Category | What to Check | Tool |
+|---|---|---|
+| **Input** | Injection (SQL, command, LDAP, XPath), input validation bypass | Semgrep, CodeQL |
+| **Auth** | Authentication bypass, missing auth, weak session, JWT misconfiguration | Semgrep |
+| **Data** | Sensitive data exposure, PII leakage, excessive data in responses | Semgrep |
+| **Storage** | Plaintext secrets, hardcoded keys, weak cryptography (MD5, SHA1, DES) | Semgrep, Trivy |
+| **Network** | SSRF, open redirect, missing TLS, overly permissive CORS | Semgrep |
+| **Browser** | XSS (stored, reflected, DOM), CSP gaps, CSRF | Semgrep, CodeQL |
+| **Dependency** | Known CVEs, deprecated packages, supply chain risk | npm audit, pip audit, OSV, Snyk, Trivy |
+| **Infra** | Secrets in config, weak IAM, exposed ports, missing encryption | Trivy, checkov |
 
-### CSRF (A01)
-- State-changing requests (POST, PUT, DELETE, PATCH) without CSRF tokens or SameSite cookies.
-- Cookie-based auth without `SameSite=Strict` or `SameSite=Lax`.
+## Step 2: Run SAST Tools
 
-### Authentication & Authorization (A01, A07)
-- Hardcoded credentials, API keys, tokens in source code.
-- Weak password policies (no minimum length, no complexity).
-- Missing rate limiting on login/2FA/password-reset endpoints.
-- Overly permissive CORS (`Access-Control-Allow-Origin: *` with credentials).
-- Path traversal: file paths built from user input without sanitization.
-- Missing authorization checks — can user A access user B's data (IDOR)?
+Run the appropriate tools on the changed files. If a tool is not installed, note it as a limitation.
 
-### Sensitive Data (A02, A04)
-- Secrets in code, config files, or environment dumps.
-- Logging PII, tokens, passwords — flag at any log level.
-- Missing encryption at rest for sensitive fields.
-- Hardcoded encryption keys or IVs.
+| Language | Primary SAST | Secret Scanning | Dependency Check |
+|---|---|---|---|
+| Python | `semgrep --config=auto` | `detect-secrets` or `trufflehog` | `pip audit` |
+| JavaScript/TypeScript | `semgrep --config=auto` | `trufflehog` | `npm audit` |
+| Go | `semgrep --config=auto` or `gosec` | `gitleaks` | `go vulncheck` or `osv-scanner` |
+| Java | `semgrep --config=auto` or `spotbugs` | `trufflehog` | `mvn dependency:analyze` + OSV |
+| All | `trivy fs <dir>` | - | `trivy fs <dir>` |
 
-### Dependencies (A06)
-- Check dependency files (`package.json`, `requirements.txt`, `go.mod`, `pom.xml`, `Cargo.toml`).
-- Flag packages with known critical CVEs (use your knowledge cutoff — note that the user should verify with `npm audit`/`pip audit`/`go vulncheck`).
-- Deprecated/abandoned packages — suggest alternatives.
+For each tool run, capture:
+- `tool_used`: name and version
+- `findings_raw`: total count of findings from the tool
+- Categorize each finding into the security surface categories above
 
-### Transport Security
-- HTTP (not HTTPS) endpoints for sensitive operations.
-- `InsecureSkipVerify: true` in TLS config.
-- `sslmode=disable` in database connection strings.
+## Step 3: LLM Triage & Explain
+
+For each finding:
+
+1. **Triage**: is this a true positive or false positive? Many SAST tools have high false positive rates — the LLM's job is to validate the finding against the actual code.
+2. **Severity re-assessment**: the tool's default severity may be wrong. A hardcoded test credential in `tests/fixtures/` is low; a hardcoded production API key in `src/config.ts` is critical.
+3. **Explain**: translate tool output into human language. "Semgrep detected `python.sqlalchemy.security.sqlalchemy-sqli`" → "SQLAlchemy query uses string formatting instead of parameterized queries, allowing SQL injection"
+4. **Prioritize**: rank by actual risk. A SQL injection in a login handler is more urgent than a missing CSP header.
+
+## Step 4: Dependency Check
+
+Run `npm audit`, `pip audit`, `go vulncheck`, `osv-scanner`, or `trivy` on the project's dependency files.
+
+For each finding:
+- **CVE ID** if available
+- **Severity** from the advisory
+- **Fixed version**: what version resolves it
+- **Exploitability**: is this dependency actually reachable from the changed code? A CVE in a dev-only tool is lower priority than a CVE in a runtime dependency handling user input.
+
+## Step 5: Classification-Based Output
+
+Group all findings (SAST + secret scan + dependency check) by category. Each finding references its source tool.
 
 ## Output
 
 ```json
 {
   "score": 0,
+  "sast_tools_used": ["semgrep 1.x", "trivy 0.x"],
+  "findings_raw": 42,
   "vulnerabilities": [
     {
       "type": "",
       "severity": "critical|high|medium|low",
+      "category": "input|auth|data|storage|network|browser|dependency|infra",
       "cwe_id": "",
+      "source_tool": "semgrep",
       "location": "",
       "description": "",
       "remediation": ""
     }
   ],
-  "dependency_issues": [],
+  "dependency_issues": [
+    {
+      "package": "",
+      "current_version": "",
+      "fixed_version": "",
+      "cve_id": "",
+      "severity": "",
+      "reachable": true,
+      "advisory": ""
+    }
+  ],
   "compliance": {
     "owasp_top10": true,
     "data_privacy": true
@@ -65,4 +94,9 @@ Apply OWASP Top 10 awareness and language-specific vulnerability patterns.
 }
 ```
 
-For each vulnerability, include the CWE ID. Set `owasp_top10: false` if any OWASP Top 10 category is violated. Set `data_privacy: false` if PII handling or logging issues are found.
+- `sast_tools_used`: list all tools that were run. If empty, note "AI-only assessment — SAST tools not available".
+- `findings_raw`: raw count before triage/deduplication.
+- `category`: maps each vulnerability to the security surface classification (input/auth/data/storage/network/browser/dependency/infra).
+- `source_tool`: which tool found it (for auditability).
+- `reachable`: for dependency issues, is the vulnerable code path actually exercised by the changed code?
+- Score capped at 70 if no SAST tools were run (AI-only assessment cannot be fully trusted).
