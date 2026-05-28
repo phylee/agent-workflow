@@ -47,8 +47,6 @@ Examine SQL, migration scripts, ORM models, and query builders. Only invoked whe
   "migration_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "file": "", "line": 0, "type": "", "evidence_chain": [], "message": "", "suggestion": ""}],
   "schema_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "table": "", "column": "", "type": "", "evidence_chain": [], "message": "", "suggestion": ""}],
   "index_analysis": {"missing_indexes": [], "redundant_indexes": [], "recommendations": []},
-  "query_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "file": "", "line": 0, "type": "", "evidence_chain": [], "message": "", "suggestion": ""}],
-  "score": 0,
-  "applicable": true
+  "query_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "file": "", "line": 0, "type": "", "evidence_chain": [], "message": "", "suggestion": ""}]
 }
 ```

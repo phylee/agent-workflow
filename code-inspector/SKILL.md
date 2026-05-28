@@ -48,20 +48,18 @@ A diff hunk alone is insufficient — surrounding code determines whether a chan
 
 Determine `service_type` first — different service types need fundamentally different review strategies. Read `references/classification-guide.md` for the mapping of service types to their primary reviewers, extra checks, and recommended weight adjustments.
 
-Classify which reviewers to activate using these signals:
+Classify which reviewers to activate. The baseline reviewers always run. Conditional reviewers activate on signal:
 
-| Signal | Activated Reviewer |
+| Signal | Additionally Activates |
 |---|---|
 | `.sql`, `.prisma`, migration dir, `CREATE TABLE`, `ALTER TABLE`, ORM model/schema changes | `database` |
-| `auth`/`login`/`token`/`password`/`session`/`oauth`/`jwt` in paths or code | `security` |
-| `go func`, `goroutine`, `sync.Mutex`, `sync.WaitGroup`, `chan `, `async`/`await`, `Promise`, `threading`, `concurrent` | `concurrency_safety` |
+| `go func`, `goroutine`, `sync.Mutex`, `sync.WaitGroup`, `chan `, `async`/`await`, `Promise`, `threading`, `concurrent` | `concurrency` |
 | New/changed HTTP routes, RPC definitions, GraphQL schema, public exported functions, API handler files | `api_design` |
-| `try`/`catch`/`except`/`recover`/`defer`/`err != nil`/`if err` patterns | `error_handling` |
-| `log.`, `logger.`, `console.log`, `print(`, `logging.`, observability config | `logging` |
-| `.jsx`, `.tsx`, `.vue`, `.svelte`, `.css`, `.scss` files | `code_quality` (frontend focus) |
 | **Always active** (baseline) | `code_quality`, `test_coverage`, `performance`, `error_handling`, `logging`, `security` |
 
-User-specified `focus_areas` override and force-activate their reviewers.
+Reviewer file names use hyphens: `api_design` → `reviewers/api-design.md`, `test_coverage` → `reviewers/test-coverage.md`, `error_handling` → `reviewers/error-handling.md`. All others match literally: `reviewers/<name>.md`.
+
+User-specified `focus_areas` force-activate reviewers. Valid values match the category names in output-schema.md: `code_quality`, `test_coverage`, `performance`, `database`, `error_handling`, `concurrency`, `api_design`, `logging`, `security`.
 
 Output the classification:
 
@@ -69,7 +67,7 @@ Output the classification:
 {
   "change_classification": {
     "service_type": "api",
-    "change_types": ["api", "security-sensitive"],
+    "change_type": "feature|bugfix|refactor|hotfix",
     "risk_level": "high",
     "languages": ["typescript"],
     "framework": "nestjs",
@@ -91,17 +89,30 @@ For each reviewer in `activated_reviewers`, read its file at `reviewers/<name>.m
 Apply the `service_type`'s extra checks from `references/classification-guide.md`.
 
 Every finding from every reviewer must include:
-- `confidence` (0.0-1.0): tool-verified = 0.9+, heuristic = 0.5-0.7, speculative = <0.5
+- `confidence` (0.0-1.0): see `references/output-schema.md` for the 6-band scale — 0.95+ tool exact, 0.85-0.95 tool+LLM, 0.70-0.85 strong heuristic, 0.50-0.70 plausible, 0.30-0.50 speculative, <0.30 gut feel
 - `deterministic` (true/false): from a tool (Semgrep, ESLint, AST) = true; LLM inference = false
 - `evidence_chain` (ordered list): trace from input → dataflow → unsafe sink → impact
 
 ### Step 5: Aggregate Results
 
-Combine all reviewer findings into `inspections[]` — a flat list where each item has `category`, `type`, `confidence`, `deterministic`, `source`, `evidence_chain`.
+Combine all reviewer findings into `inspections[]` — a flat list. Map reviewer-specific fields to the canonical `inspections[]` field names:
+
+| Reviewer Field | `inspections[]` Field |
+|---|---|
+| `message` / `description` / `mechanism` | `impact` (what happens if not fixed) |
+| `suggestion` / `fix` / `remediation` / `test_to_add` | `recommendation` (concrete fix) |
+| `file` + `line` (separate fields) | `file` + `line` (keep as-is) |
+| `location` (combined string) | `file` + `line` (parse apart if possible) |
+| `rule_id` | `source` (prepend tool name: `"eslint:no-unused-vars"`) |
+| `type` | `type` (keep as-is) |
+| `severity` | `severity` (keep as-is) |
+| `confidence`, `deterministic`, `evidence_chain` | pass through as-is |
+
+Assign a unique `id` (e.g., `SEC-001`, `PERF-003`) to each inspection.
 
 Populate `coverage` with assertion density and mutation score from the test reviewer.
-Populate `gates` based on gate rules.
-Calculate `summary` scores per dimension.
+Populate `gates`: `merge_blocked: true` if any `critical AND deterministic` finding, or `critical AND confidence >= 0.7`, or any gate rule from output-schema.md fires.
+Calculate `summary` scores per dimension using the weight table.
 
 Read `references/output-schema.md` for the exact structure. Root key is `code_inspector_result`.
 

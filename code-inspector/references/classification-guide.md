@@ -1,5 +1,7 @@
 # Classification Guide
 
+**Weight adjustment rules**: All +/- adjustments apply to the base weight from the output-schema.md weight table. When a conditional dimension (database, concurrency, api_design) has 0% weight because no relevant code is present, its adjustment is moot — adjustments only take effect when the dimension is active (weight > 0%). When weight is redistributed from an inactive dimension, the active dimensions receive proportionally more weight, and their adjustments apply to the increased base.
+
 ## Service Type Detection
 
 Detect `service_type` from these signals (check changed files, directory structure, and code patterns):
@@ -38,17 +40,17 @@ Each service type adjusts which reviewers get primary emphasis and what extra ch
   - Render performance: missing `key`, unnecessary re-renders, large component trees, missing virtualization
   - Accessibility: missing `aria-*` attributes, non-semantic HTML, missing alt text, keyboard navigation
   - Bundle: large dependencies, dead imports, unoptimized images, missing lazy loading
-- **Weight adjustment**: code_quality +5%, performance +5%, offset from database -5%, concurrency_safety -5%
+- **Weight adjustment**: code_quality +5%, performance +5%, offset from database -5%, concurrency -5%
 
 ### Worker
-- **Primary reviewers**: error_handling, concurrency_safety, performance, logging
+- **Primary reviewers**: error_handling, concurrency, performance, logging
 - **Extra checks**:
   - Retry: is there a retry policy with backoff? Max retries? Dead letter queue?
   - Idempotency: can the same message be processed twice without side effects? Is there an idempotency key?
   - Graceful shutdown: does the worker drain in-flight jobs before exiting? SIGTERM handling?
   - Backpressure: is there a concurrency limit? What happens when the queue is full?
   - Observability: job duration metrics, success/failure counters, queue depth gauge
-- **Weight adjustment**: error_handling +5%, concurrency_safety +5%, offset from api_design -5%, test_coverage -5%
+- **Weight adjustment**: error_handling +5%, concurrency +5%, offset from api_design -5%, test_coverage -5%
 
 ### Database
 - **Primary reviewers**: database, performance
@@ -57,7 +59,7 @@ Each service type adjusts which reviewers get primary emphasis and what extra ch
   - Rollback: is there a tested down migration? Can it be rolled back after deployment?
   - Data integrity: are foreign keys enforced? Are there orphaned rows after deletion?
   - Connection pooling: is the pool size appropriate? Are connections released?
-- **Weight adjustment**: database +10%, performance +5%, offset from api_design -5%, concurrency_safety -5%, code_quality -5%
+- **Weight adjustment**: database +10%, performance +5%, offset from api_design -5%, concurrency -5%, code_quality -5%
 
 ### Infra
 - **Primary reviewers**: security, logging
@@ -76,7 +78,7 @@ Each service type adjusts which reviewers get primary emphasis and what extra ch
   - Documentation: are public functions documented? Is there a usage example?
   - Versioning: is this a breaking change? Does it follow semver?
   - Tree-shaking: can consumers import only what they need (named exports, side-effect-free)?
-- **Weight adjustment**: api_design +10%, test_coverage +5%, offset from database -5%, concurrency_safety -5%, performance -5%
+- **Weight adjustment**: api_design +10%, test_coverage +5%, offset from database -5%, concurrency -5%, performance -5%
 
 ### CLI
 - **Primary reviewers**: error_handling, code_quality
@@ -86,4 +88,4 @@ Each service type adjusts which reviewers get primary emphasis and what extra ch
   - Args: are required args validated? Is `--help` generated? Are there conflicting flags?
   - Signals: SIGINT/SIGTERM handled for clean exit? Temp files cleaned up?
   - Config: is there a config file fallback? Are env vars supported as overrides?
-- **Weight adjustment**: error_handling +5%, code_quality +5%, offset from api_design -5%, concurrency_safety -5%
+- **Weight adjustment**: error_handling +5%, code_quality +5%, offset from api_design -5%, concurrency -5%
