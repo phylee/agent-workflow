@@ -66,7 +66,47 @@ When the change set includes SQL files, migration scripts, ORM model changes, or
 - **Connection & pool management**: Are connections properly released back to the pool? Are there connection leaks from missing close/finally blocks? Are prepared statements reused where the driver supports it?
 - **ORMs & query builders**: For ORM-heavy code, flag N+1 queries from lazy loading, missing `eager()`/`prefetch_related()` calls, bulk operations done in loops, and inefficient `save()` call patterns.
 
-### 5. Security (security)
+### 5. Error Handling (error_handling)
+Examine how the code deals with failure. This is distinct from testing — it's about the robustness of the production code itself, not the tests that verify it.
+
+- **Error propagation**: Are errors properly wrapped with context before being returned upstream (e.g., `fmt.Errorf("...: %w", err)` in Go, `raise ... from e` in Python, `throw new Error("...", { cause: e })` in JS)? Are errors silently swallowed without logging or propagation?
+- **Error classification**: Does the code distinguish between recoverable and non-recoverable errors? Are transient errors (network timeouts, deadlocks) retried with backoff? Are permanent errors (validation failures, auth errors) surfaced immediately?
+- **Retry & resilience**: For distributed systems, are retries using exponential backoff with jitter? Is there a maximum retry count or deadline? Are idempotency keys used for retried writes?
+- **Graceful degradation**: Is there a fallback path when a non-critical dependency is unavailable (e.g., stale cache vs. error)? Are circuit breakers used to prevent cascading failures?
+- **Panic/recover discipline**: In Go, is `recover()` used only in deliberate locations (top-level goroutine, middleware), not as a crutch? In Python, are bare `except:` clauses caught (already flagged in code_quality, but here the focus is on whether the recovery action is correct)?
+- **Resource cleanup**: Are files, connections, locks, and goroutines cleaned up on error paths? Is `defer`/`try-finally`/`context manager` usage correct? Are there leaks in early-return or exception paths?
+
+### 6. Concurrency Safety (concurrency_safety)
+When the code uses threads, goroutines, async/await, or shared mutable state, examine correctness under concurrent execution. Skip if the code is single-threaded and stateless — set `score` to 100 and mark `applicable: false`.
+
+- **Race conditions**: Are shared variables accessed without synchronization? Are check-then-act sequences (e.g., `if exists { delete }`) atomic? In Go, run mental data race analysis on goroutine variable captures — does the closure capture a loop variable by reference?
+- **Deadlock risk**: Are multiple locks acquired in inconsistent order across code paths? Are channels closed by the sender only? Is there a cycle in the dependency graph of synchronized resources?
+- **Goroutine/thread lifecycle**: Are goroutines started without a way to stop them (context cancellation, done channel)? Is there a `sync.WaitGroup` or equivalent to wait for completion? Can goroutines leak on error paths?
+- **Channel/queue discipline**: In Go, are channels closed by the sender? Are unbuffered channels used where buffered would prevent deadlocks (and vice versa)? Are select statements handling the done/cancel case?
+- **Async correctness**: In Python/Node, are synchronous blocking calls (file I/O, CPU-heavy work) offloaded to a thread pool or worker? Are coroutines properly awaited — no fire-and-forget without error handling? In JS, are Promise chains correctly terminated with `.catch()`?
+- **Thread safety of dependencies**: Are shared caches, connection pools, and third-party objects documented as thread-safe? Are they used correctly under concurrency?
+
+### 7. API / Interface Design (api_design)
+When the change adds or modifies public functions, HTTP endpoints, RPC methods, or library interfaces, examine the contract design. Skip if the change is purely internal implementation detail — set `score` to 100 and mark `applicable: false`.
+
+- **Consistency**: Do new functions follow the same naming, parameter order, and return type conventions as existing ones? In HTTP APIs, are URL paths consistent (plural nouns, kebab-case)? Are error response bodies following the project's standard envelope?
+- **Idempotency**: Are state-changing operations idempotent where the client would reasonably retry (PUT, DELETE)? Is idempotency documented for create operations that use client-supplied IDs?
+- **Backward compatibility**: Does this change break existing callers? Was a parameter added as optional (OK) or was the signature changed without an adapter (breaking)? In REST APIs, was a field removed from the response without versioning?
+- **Parameter design**: Are boolean flag parameters a smell (encourage `doThing(includeDetails=true)` over `doThingWithDetails()`)? Are there too many positional parameters (>4)? Should related parameters be grouped into a struct/object?
+- **Return type hygiene**: Are null/None/nil returns documented? Is the function returning an empty collection vs. null? Are errors and partial results distinguishable? In typed languages, is `Optional<T>` used instead of `@Nullable T`?
+- **Naming clarity**: Does the function name clearly describe what it does (verb + noun)? Are abbreviations avoided unless they're universal domain terms? Is the behavior surprising given the name (side effects, hidden dependencies)?
+
+### 8. Logging & Observability (logging)
+Check whether the code produces useful diagnostic signals for production debugging. This dimension is about operational readiness, not code correctness.
+
+- **Log levels**: Are errors logged at ERROR/WARN level? Is DEBUG used for noisy diagnostic detail? Is INFO used for key lifecycle events (server start, config loaded, migration complete)? Are there `console.log`/`print()` calls that should use a proper logger?
+- **Structured logging**: Are key-value pairs used instead of string interpolation in log messages? This is critical for log aggregation tools (ELK, Datadog, Loki) — `log.Info("user created", "user_id", id)` not `log.Info(f"user {id} created")`.
+- **PII in logs**: Is personally identifiable information (emails, names, IPs, tokens, passwords) being logged? Even at DEBUG level, PII in logs is a compliance risk under GDPR, SOC 2, etc.
+- **Trace instrumentation**: Are incoming requests assigned a trace ID / request ID? Is this ID propagated to downstream calls and included in log entries? In HTTP handlers, is there middleware that injects and logs the request ID?
+- **Metric coverage**: Are key operational metrics exposed — request latency, error rate, queue depth, connection pool utilization? Is the code incrementing counters for important events (login failures, rate limit hits, data export)?
+- **Alertable conditions**: Would an on-call engineer be able to diagnose a production issue from the signals this code emits? Are there gaps where a failure would be silent (no log, no metric) until users report it?
+
+### 9. Security (security)
 Apply OWASP Top 10 awareness and language-specific vulnerability patterns:
 - **Injection**: SQL injection, command injection, LDAP injection, XPath injection. Check that parameterized queries are used, not string concatenation.
 - **XSS**: In web contexts, check that user input is sanitized before rendering. Flag `dangerouslySetInnerHTML`, `innerHTML`, `document.write`.
@@ -77,15 +117,19 @@ Apply OWASP Top 10 awareness and language-specific vulnerability patterns:
 
 For each vulnerability found, include the CWE ID where applicable.
 
-### 6. Overall Score and Recommendations
+### 10. Overall Score and Recommendations
 Calculate `overall_score` as a weighted average:
-- code_quality: 20%
-- test_coverage: 20%
-- performance: 20%
+- code_quality: 15%
+- test_coverage: 15%
+- performance: 10%
 - database: 10% (0% if no database changes present, redistributing the weight proportionally)
-- security: 30%
+- error_handling: 15%
+- concurrency_safety: 10% (0% if no concurrent code present, redistributing the weight proportionally)
+- api_design: 4% (0% if no API surface changes, redistributing the weight proportionally)
+- logging: 5%
+- security: 16%
 
-Security always gets the largest weight because a single vulnerability can be catastrophic. If `focus_areas` is specified, weight those areas 2x and rebalance.
+The conditional dimensions (database, concurrency_safety, api_design) auto-detect applicability. When one is skipped, its weight is distributed proportionally among the remaining active dimensions. Security always gets the highest single weight because a single vulnerability can be catastrophic. If `focus_areas` is specified, weight those areas 2x and rebalance.
 
 Generate prioritized recommendations. **Immediate** = critical or high-severity issues that block deployment. **Short-term** = should address in the next sprint. **Long-term** = architectural improvements. Include an `effort_estimate` (e.g., "2h", "1d", "1w") to help with planning.
 
@@ -99,7 +143,7 @@ After the JSON, provide a brief human-readable summary (3-5 sentences) highlight
 
 The user may pass these optional parameters inline or as structured input:
 - `language`: `"auto"` (default) or a specific language like `"python"`, `"javascript"`, `"typescript"`, `"java"`, `"go"`, `"rust"`, `"ruby"`, `"php"`, `"c"`, `"cpp"`, `"csharp"`
-- `focus_areas`: Array of areas to emphasize, e.g. `["security", "performance"]`. Valid values: `"code_quality"`, `"test_coverage"`, `"performance"`, `"database"`, `"security"`
+- `focus_areas`: Array of areas to emphasize, e.g. `["security", "performance"]`. Valid values: `"code_quality"`, `"test_coverage"`, `"performance"`, `"database"`, `"error_handling"`, `"concurrency_safety"`, `"api_design"`, `"logging"`, `"security"`
 - `strictness`: `"lenient"` (relaxed, only flag clear bugs), `"normal"` (balanced, default), `"strict"` (flag everything, prefer explicit over implicit)
 
 ## Language-Specific Guidance

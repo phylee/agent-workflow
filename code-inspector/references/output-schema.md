@@ -103,6 +103,60 @@ The code review output MUST use this exact JSON structure. All fields are requir
         }
       ]
     },
+    "error_handling": {
+      "score": 0,
+      "issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "file": "",
+          "line": 0,
+          "type": "swallowed_error|missing_context|bare_except|missing_retry|resource_leak|no_fallback",
+          "message": "",
+          "suggestion": ""
+        }
+      ]
+    },
+    "concurrency_safety": {
+      "applicable": true,
+      "score": 0,
+      "issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "file": "",
+          "line": 0,
+          "type": "race_condition|deadlock_risk|goroutine_leak|unsynchronized_access|loop_variable_capture|missing_done_channel",
+          "message": "",
+          "suggestion": ""
+        }
+      ]
+    },
+    "api_design": {
+      "applicable": true,
+      "score": 0,
+      "issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "file": "",
+          "line": 0,
+          "type": "breaking_change|inconsistent_signature|missing_idempotency|poor_naming|bool_parameter_smell|too_many_params",
+          "message": "",
+          "suggestion": ""
+        }
+      ]
+    },
+    "logging": {
+      "score": 0,
+      "issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "file": "",
+          "line": 0,
+          "type": "wrong_level|string_interpolation|pii_leak|missing_trace_id|console_log|missing_metric",
+          "message": "",
+          "suggestion": ""
+        }
+      ]
+    },
     "security": {
       "score": 0,
       "vulnerabilities": [
@@ -198,6 +252,36 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `file`/`line`: Where the query is located
   - `message`/`suggestion`: What's wrong and how to fix it
 
+### error_handling
+- `score`: 0-100
+- `issues[]`: Error handling problems found
+  - `type`: `swallowed_error` (error silently dropped), `missing_context` (no wrapping/wrapping without context), `bare_except` (overly broad catch), `missing_retry` (transient error not retried), `resource_leak` (cleanup skipped on error path), `no_fallback` (no graceful degradation when dependency fails)
+  - `file`/`line`: Where the issue is located
+  - `message`/`suggestion`: What's wrong and how to fix it
+
+### concurrency_safety
+- `applicable`: true if concurrent code detected (goroutines, threads, async, shared state), false otherwise
+- `score`: 0-100 (set to 100 if `applicable: false`)
+- `issues[]`: Concurrency problems found
+  - `type`: `race_condition`, `deadlock_risk`, `goroutine_leak`, `unsynchronized_access`, `loop_variable_capture`, `missing_done_channel`
+  - `file`/`line`: Where the issue is located
+  - `message`/`suggestion`: What's wrong and how to fix it
+
+### api_design
+- `applicable`: true if public function signatures, HTTP endpoints, or library interfaces were added/modified, false if purely internal
+- `score`: 0-100 (set to 100 if `applicable: false`)
+- `issues[]`: API design problems found
+  - `type`: `breaking_change`, `inconsistent_signature`, `missing_idempotency`, `poor_naming`, `bool_parameter_smell`, `too_many_params`
+  - `file`/`line`: Where the issue is located
+  - `message`/`suggestion`: What's wrong and how to fix it
+
+### logging
+- `score`: 0-100
+- `issues[]`: Observability problems found
+  - `type`: `wrong_level` (ERROR for info, DEBUG for critical), `string_interpolation` (not using structured key-value pairs), `pii_leak` (personal data in logs), `missing_trace_id` (no request correlation ID), `console_log` (print/console.log instead of proper logger), `missing_metric` (key operational counter not implemented)
+  - `file`/`line`: Where the issue is located
+  - `message`/`suggestion`: What's wrong and how to fix it
+
 ### security
 - `score`: 0-100
 - `vulnerabilities[]`: Security issues found
@@ -213,7 +297,7 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `data_privacy`: true if no data privacy concerns found
 
 ### overall_score
-0-100, weighted average of all applicable category scores (code_quality, test_coverage, performance, database, security).
+0-100, weighted average of all applicable category scores (code_quality, test_coverage, performance, database, error_handling, concurrency_safety, api_design, logging, security).
 
 ### recommendations
 Actionable next steps sorted by priority:
