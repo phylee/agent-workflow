@@ -297,7 +297,21 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `data_privacy`: true if no data privacy concerns found
 
 ### overall_score
-0-100, weighted average of all applicable category scores (code_quality, test_coverage, performance, database, error_handling, concurrency_safety, api_design, logging, security).
+0-100, weighted average of all applicable category scores using these default weights:
+
+| Dimension | Weight | Conditional? |
+|-----------|--------|-------------|
+| code_quality | 15% | always active |
+| test_coverage | 15% | always active |
+| performance | 10% | always active |
+| database | 10% | yes — 0% if no DB changes |
+| error_handling | 15% | always active |
+| concurrency_safety | 10% | yes — 0% if no concurrent code |
+| api_design | 4% | yes — 0% if no API surface changes |
+| logging | 5% | always active |
+| security | 16% | always active |
+
+When a conditional dimension is skipped, its weight is redistributed proportionally among the remaining active dimensions.
 
 ### recommendations
 Actionable next steps sorted by priority:
