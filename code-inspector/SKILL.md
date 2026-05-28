@@ -55,7 +55,18 @@ Look for common anti-patterns:
 
 Estimate time/space complexity for the main algorithm paths. Identify the top 1-3 bottlenecks.
 
-### 4. Security (security)
+### 4. Database (database)
+When the change set includes SQL files, migration scripts, ORM model changes, or database-adjacent code, examine the database layer for correctness and safety. Skip this section if no database-related code is present — set `score` to 100 and mark `applicable: false`.
+
+- **Migration safety**: Does the migration acquire heavy locks (e.g., `ALTER TABLE ... ADD COLUMN` without `NOT NULL DEFAULT` on large tables)? Is the migration reversible — can it be rolled back cleanly? Are data backfill operations batched to avoid long-running transactions?
+- **Schema design**: Are columns using appropriate data types? Are there missing constraints (NOT NULL, UNIQUE, FOREIGN KEY, CHECK)? Are cascading deletes/updates intentional and safe? Are VARCHAR lengths reasonable?
+- **Index strategy**: Are there missing indexes on columns used in WHERE, JOIN, ORDER BY, or GROUP BY clauses? Are there redundant or unused indexes? Are indexes selective enough to be useful? Are covering indexes used where appropriate?
+- **Query patterns**: Flag `SELECT *` in production code — it breaks when schema changes and wastes I/O. Flag queries without LIMIT that could return unbounded rows. Check for inefficient JOIN order, missing JOIN conditions (cross joins), correlated subqueries that could be rewritten as JOINs.
+- **Data integrity**: Are transactions used appropriately for multi-statement operations? Is the isolation level appropriate for the business logic? Are there race conditions from missing `SELECT ... FOR UPDATE` or equivalent locking?
+- **Connection & pool management**: Are connections properly released back to the pool? Are there connection leaks from missing close/finally blocks? Are prepared statements reused where the driver supports it?
+- **ORMs & query builders**: For ORM-heavy code, flag N+1 queries from lazy loading, missing `eager()`/`prefetch_related()` calls, bulk operations done in loops, and inefficient `save()` call patterns.
+
+### 5. Security (security)
 Apply OWASP Top 10 awareness and language-specific vulnerability patterns:
 - **Injection**: SQL injection, command injection, LDAP injection, XPath injection. Check that parameterized queries are used, not string concatenation.
 - **XSS**: In web contexts, check that user input is sanitized before rendering. Flag `dangerouslySetInnerHTML`, `innerHTML`, `document.write`.
@@ -66,14 +77,15 @@ Apply OWASP Top 10 awareness and language-specific vulnerability patterns:
 
 For each vulnerability found, include the CWE ID where applicable.
 
-### 5. Overall Score and Recommendations
+### 6. Overall Score and Recommendations
 Calculate `overall_score` as a weighted average:
-- code_quality: 25%
-- test_coverage: 25%
-- performance: 25%
-- security: 25%
+- code_quality: 20%
+- test_coverage: 20%
+- performance: 20%
+- database: 10% (0% if no database changes present, redistributing the weight proportionally)
+- security: 30%
 
-If `focus_areas` is specified, weight those areas 2x and rebalance.
+Security always gets the largest weight because a single vulnerability can be catastrophic. If `focus_areas` is specified, weight those areas 2x and rebalance.
 
 Generate prioritized recommendations. **Immediate** = critical or high-severity issues that block deployment. **Short-term** = should address in the next sprint. **Long-term** = architectural improvements. Include an `effort_estimate` (e.g., "2h", "1d", "1w") to help with planning.
 
@@ -87,7 +99,7 @@ After the JSON, provide a brief human-readable summary (3-5 sentences) highlight
 
 The user may pass these optional parameters inline or as structured input:
 - `language`: `"auto"` (default) or a specific language like `"python"`, `"javascript"`, `"typescript"`, `"java"`, `"go"`, `"rust"`, `"ruby"`, `"php"`, `"c"`, `"cpp"`, `"csharp"`
-- `focus_areas`: Array of areas to emphasize, e.g. `["security", "performance"]`. Valid values: `"code_quality"`, `"test_coverage"`, `"performance"`, `"security"`
+- `focus_areas`: Array of areas to emphasize, e.g. `["security", "performance"]`. Valid values: `"code_quality"`, `"test_coverage"`, `"performance"`, `"database"`, `"security"`
 - `strictness`: `"lenient"` (relaxed, only flag clear bugs), `"normal"` (balanced, default), `"strict"` (flag everything, prefer explicit over implicit)
 
 ## Language-Specific Guidance

@@ -64,6 +64,45 @@ The code review output MUST use this exact JSON structure. All fields are requir
         "bottlenecks": []
       }
     },
+    "database": {
+      "applicable": true,
+      "score": 0,
+      "migration_issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "file": "",
+          "line": 0,
+          "type": "locking|rollback|backfill|type_change|constraint_change",
+          "message": "",
+          "suggestion": ""
+        }
+      ],
+      "schema_issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "table": "",
+          "column": "",
+          "type": "missing_constraint|wrong_type|missing_default|cascade_risk|normalization",
+          "message": "",
+          "suggestion": ""
+        }
+      ],
+      "index_analysis": {
+        "missing_indexes": [],
+        "redundant_indexes": [],
+        "recommendations": []
+      },
+      "query_issues": [
+        {
+          "severity": "critical|high|medium|low",
+          "file": "",
+          "line": 0,
+          "type": "n_plus_1|select_star|missing_limit|cartesian_join|correlated_subquery|missing_transaction",
+          "message": "",
+          "suggestion": ""
+        }
+      ]
+    },
     "security": {
       "score": 0,
       "vulnerabilities": [
@@ -142,6 +181,23 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `space_complexity`: Big-O notation for space usage
   - `bottlenecks[]`: Specific bottleneck locations
 
+### database
+- `applicable`: true if database-related code was detected (SQL files, migrations, ORM models, query builders), false if no DB code present
+- `score`: 0-100 (set to 100 if `applicable: false`)
+- `migration_issues[]`: Problems with schema migration scripts
+  - `type`: `locking` (dangerous lock), `rollback` (not reversible), `backfill` (unsafe data migration), `type_change` (lossy cast), `constraint_change` (adding constraints to large tables)
+- `schema_issues[]`: Problems with table/column design
+  - `table`/`column`: Affected database objects
+  - `type`: `missing_constraint`, `wrong_type`, `missing_default`, `cascade_risk`, `normalization`
+- `index_analysis`: Index review
+  - `missing_indexes[]`: Columns that should be indexed
+  - `redundant_indexes[]`: Indexes that duplicate or can be removed
+  - `recommendations[]`: Strings with specific index suggestions
+- `query_issues[]`: Problems in application-layer queries
+  - `type`: `n_plus_1`, `select_star`, `missing_limit`, `cartesian_join`, `correlated_subquery`, `missing_transaction`
+  - `file`/`line`: Where the query is located
+  - `message`/`suggestion`: What's wrong and how to fix it
+
 ### security
 - `score`: 0-100
 - `vulnerabilities[]`: Security issues found
@@ -157,7 +213,7 @@ The code review output MUST use this exact JSON structure. All fields are requir
   - `data_privacy`: true if no data privacy concerns found
 
 ### overall_score
-0-100, weighted average of the four category scores.
+0-100, weighted average of all applicable category scores (code_quality, test_coverage, performance, database, security).
 
 ### recommendations
 Actionable next steps sorted by priority:
