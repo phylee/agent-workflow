@@ -72,17 +72,21 @@ After processing the tool output, also check for issues that linters CAN'T catch
   "tool_findings_count": 42,
   "issues": [
     {
+      "category": "code_quality",
       "severity": "critical|high|medium|low",
-      "category": "bug-risk|style|complexity|anti-pattern|dead-code",
       "confidence": 0.0,
       "deterministic": true,
       "source": "",
       "file": "",
       "line": 0,
+      "type": "bug-risk|style|complexity|anti-pattern|dead-code",
       "rule_id": "B007",
       "evidence_chain": [],
-      "message": "",
-      "suggestion": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {
+        "rule_id": "B007"
+      }
     }
   ],
   "standards_compliance": {

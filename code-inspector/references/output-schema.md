@@ -14,8 +14,18 @@ The review output is a strongly-structured inspection report. Every finding must
       "quality_score": 0,
       "security_score": 0,
       "test_score": 0,
-      "performance_score": 0
+      "performance_score": 0,
+      "human_summary": ""
     },
+    "tool_runs": [
+      {
+        "tool": "",
+        "status": "success|failed|unavailable|skipped",
+        "deterministic": true,
+        "summary": ""
+      }
+    ],
+    "limitations": [],
     "inspections": [
       {
         "id": "",
@@ -29,7 +39,8 @@ The review output is a strongly-structured inspection report. Every finding must
         "line": 0,
         "evidence_chain": [],
         "impact": "",
-        "recommendation": ""
+        "recommendation": "",
+        "metadata": {}
       }
     ],
     "coverage": {
@@ -39,6 +50,14 @@ The review output is a strongly-structured inspection report. Every finding must
         "assertion_density": 0.0,
         "mutation_score": 0
       },
+      "api_test": {
+        "endpoints_tested": 0,
+        "total_endpoints": 0,
+        "contract_tests_found": 0,
+        "negative_cases_covered": 0,
+        "auth_cases_covered": 0,
+        "idempotency_cases_covered": 0
+      },
       "e2e": {
         "critical_journeys_covered": 0,
         "total_critical_journeys": 0,
@@ -47,9 +66,11 @@ The review output is a strongly-structured inspection report. Every finding must
     },
     "gates": {
       "merge_blocked": true,
+      "verdict": "",
       "reasons": [],
       "warnings": []
     },
+    "top_findings": [],
     "overall_score": 0,
     "recommendations": [
       {
@@ -75,6 +96,16 @@ The review output is a strongly-structured inspection report. Every finding must
 - `security_score`: 0-100 security posture
 - `test_score`: 0-100 test quality
 - `performance_score`: 0-100 performance health
+- `human_summary`: 2-3 sentence structured summary for human readers. Keep it inside JSON.
+
+### tool_runs
+- `tool`: Tool command or name attempted (e.g., `ruff check`, `semgrep`, `npm audit`)
+- `status`: `success`, `failed`, `unavailable`, or `skipped`
+- `deterministic`: `true` if the result came from actual tool output
+- `summary`: concise outcome, including failure reason when relevant
+
+### limitations
+List missing context, unavailable tools, skipped network-dependent checks, or any reason the report may be incomplete.
 
 ### inspections (the core)
 
@@ -98,20 +129,31 @@ A flat list of all findings across all dimensions. Every inspection must include
   - This is what makes a finding auditable — a reviewer can validate each link in the chain independently
 - `impact`: what happens if this is not fixed
 - `recommendation`: concrete fix with code example where possible
+- `metadata`: category-specific machine-readable details such as `cwe_id`, `cve_id`, `contract_type`, `mutation`, `table`, `column`, `migration_path`, or `tool_rule_url`
 
 ### coverage
 - `unit_test`: test quality metrics
   - `changed_lines_covered_pct`: % of changed lines exercised by tests (informational only — do not trust)
   - `assertion_density`: assertions per test
   - `mutation_score`: % of injected mutations killed by tests (the actual quality signal)
+- `api_test`: interface and contract test metrics
+  - `endpoints_tested` / `total_endpoints`: changed or affected API endpoints with tests
+  - `contract_tests_found`: OpenAPI/GraphQL/protobuf/schema contract tests found
+  - `negative_cases_covered`: validation, malformed input, authorization failure, and error response tests
+  - `auth_cases_covered`: anonymous, authenticated, and role-specific access tests
+  - `idempotency_cases_covered`: retry or duplicate request tests for unsafe writes
 - `e2e`: journey coverage
   - `critical_journeys_covered` / `total_critical_journeys`
   - `pseudo_e2e_detected`: true if existing E2E tests are page-visit-only or fully mocked
 
 ### gates
 - `merge_blocked`: **true** if any critical-severity finding OR if `reasons` contains blocking conditions
+- `verdict`: one-line verdict, e.g. `Merge blocked: critical_security_issue` or `Merge allowed with 3 warnings`
 - `reasons[]`: list of blocking reasons (e.g., `critical_security_issue`, `missing_test`, `breaking_api_change`, `migration_without_rollback`)
 - `warnings[]`: non-blocking concerns that should be addressed (e.g., `low_assertion_density`, `console_log_in_production`)
+
+### top_findings
+List the 1-5 most important inspection IDs, ordered by merge risk and impact.
 
 ### overall_score
 0-100. Weighted across dimensions (see weight table below). Gate-blocked reviews cap at 40.
@@ -132,6 +174,21 @@ Prioritized action items: `immediate` (blocks merge), `short-term` (this sprint)
 | api_design | 4% | 0% if no API surface changes |
 | logging | 5% | always active |
 | security | 16% | always active |
+
+## Score Calculation
+
+1. Start each active dimension at 100.
+2. For every inspection, subtract `severity_weight * confidence_multiplier` from its dimension:
+   - `critical`: 45
+   - `high`: 25
+   - `medium`: 12
+   - `low`: 4
+   - `confidence_multiplier`: `confidence`; add `+0.10` capped at `1.0` when `deterministic: true`
+3. Clamp each dimension score to 0-100.
+4. Inactive conditional dimensions (`database`, `concurrency`, `api_design`) receive no score and their weight is redistributed proportionally across active dimensions.
+5. `test_score` should use mutation score when available; otherwise combine assertion density, test existence, API test coverage, and E2E journey coverage.
+6. `risk_score = 100 - overall_score`, then increase by up to 20 points for critical/high findings that affect externally reachable paths.
+7. If `gates.merge_blocked` is true, cap `overall_score` at 40.
 
 ## Confidence Guidelines
 

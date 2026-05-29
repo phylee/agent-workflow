@@ -64,19 +64,23 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
   "score": 0,
   "sast_tools_used": ["semgrep 1.x", "trivy 0.x"],
   "findings_raw": 42,
-  "vulnerabilities": [
+  "issues": [
     {
+      "category": "security",
       "type": "",
       "severity": "critical|high|medium|low",
-      "category": "input|auth|data|storage|network|browser|dependency|infra",
       "confidence": 0.0,
       "deterministic": true,
       "source": "",
-      "cwe_id": "",
+      "file": "",
+      "line": 0,
       "evidence_chain": [],
-      "location": "",
-      "description": "",
-      "remediation": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {
+        "security_surface": "input|auth|data|storage|network|browser|dependency|infra",
+        "cwe_id": ""
+      }
     }
   ],
   "dependency_issues": [
@@ -99,7 +103,7 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
 
 - `sast_tools_used`: list all tools that were run. If empty, note "AI-only assessment — SAST tools not available".
 - `findings_raw`: raw count before triage/deduplication.
-- `category`: maps each vulnerability to the security surface classification (input/auth/data/storage/network/browser/dependency/infra).
-- `source_tool`: which tool found it (for auditability).
+- `metadata.security_surface`: maps each vulnerability to the security surface classification (input/auth/data/storage/network/browser/dependency/infra).
+- `source`: which tool found it (for auditability).
 - `reachable`: for dependency issues, is the vulnerable code path actually exercised by the changed code?
 - Score capped at 70 if no SAST tools were run (AI-only assessment cannot be fully trusted).

@@ -40,6 +40,7 @@ Examine how the code deals with failure — distinct from testing, this is about
   "score": 0,
   "issues": [
     {
+      "category": "error_handling",
       "severity": "critical|high|medium|low",
       "confidence": 0.0,
       "deterministic": false,
@@ -48,8 +49,9 @@ Examine how the code deals with failure — distinct from testing, this is about
       "line": 0,
       "type": "swallowed_error|missing_context|bare_except|missing_retry|resource_leak|no_fallback",
       "evidence_chain": [],
-      "message": "",
-      "suggestion": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {}
     }
   ]
 }

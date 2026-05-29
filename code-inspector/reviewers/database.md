@@ -44,9 +44,26 @@ Examine SQL, migration scripts, ORM models, and query builders. Only invoked whe
 {
   "applicable": true,
   "score": 0,
-  "migration_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "file": "", "line": 0, "type": "", "evidence_chain": [], "message": "", "suggestion": ""}],
-  "schema_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "table": "", "column": "", "type": "", "evidence_chain": [], "message": "", "suggestion": ""}],
-  "index_analysis": {"missing_indexes": [], "redundant_indexes": [], "recommendations": []},
-  "query_issues": [{"severity": "", "confidence": 0.0, "deterministic": false, "source": "", "file": "", "line": 0, "type": "", "evidence_chain": [], "message": "", "suggestion": ""}]
+  "issues": [
+    {
+      "category": "database",
+      "severity": "critical|high|medium|low",
+      "confidence": 0.0,
+      "deterministic": false,
+      "source": "",
+      "file": "",
+      "line": 0,
+      "type": "migration_safety|schema_design|missing_index|redundant_index|query_pattern|data_integrity|orm_antipattern",
+      "evidence_chain": [],
+      "impact": "",
+      "recommendation": "",
+      "metadata": {
+        "table": "",
+        "column": "",
+        "index_name": ""
+      }
+    }
+  ],
+  "index_analysis": {"missing_indexes": [], "redundant_indexes": [], "recommendations": []}
 }
 ```

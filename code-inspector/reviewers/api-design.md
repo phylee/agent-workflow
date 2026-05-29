@@ -75,6 +75,7 @@ Beyond breaking changes, check API design quality:
   },
   "issues": [
     {
+      "category": "api_design",
       "severity": "critical|high|medium|low",
       "confidence": 0.0,
       "deterministic": true,
@@ -83,9 +84,12 @@ Beyond breaking changes, check API design quality:
       "line": 0,
       "type": "breaking_change|inconsistent_signature|missing_idempotency|poor_naming|bool_parameter_smell|too_many_params|sensitive_field_leak|missing_validation|missing_pagination|missing_rate_limit",
       "evidence_chain": [],
-      "message": "",
-      "suggestion": "",
-      "migration_path": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {
+        "contract_type": "openapi|graphql|protobuf|implicit",
+        "migration_path": ""
+      }
     }
   ]
 }

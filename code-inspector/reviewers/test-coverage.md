@@ -111,6 +111,10 @@ Flag tests that look like E2E but aren't:
   "api_test": {
     "endpoints_tested": 0,
     "total_endpoints": 0,
+    "contract_tests_found": 0,
+    "negative_cases_covered": 0,
+    "auth_cases_covered": 0,
+    "idempotency_cases_covered": 0,
     "missing_scenarios": []
   },
   "e2e_test": {
@@ -126,7 +130,27 @@ Flag tests that look like E2E but aren't:
     ],
     "score": 0,
     "gaps": []
-  }
+  },
+  "issues": [
+    {
+      "category": "test_coverage",
+      "severity": "critical|high|medium|low",
+      "confidence": 0.0,
+      "deterministic": true,
+      "source": "",
+      "file": "",
+      "line": 0,
+      "type": "missing_unit_test|low_assertion_density|surviving_mutation|missing_api_test|missing_negative_case|missing_auth_case|missing_e2e_journey|pseudo_e2e",
+      "evidence_chain": [],
+      "impact": "",
+      "recommendation": "",
+      "metadata": {
+        "journey": "",
+        "mutation": "",
+        "endpoint": ""
+      }
+    }
+  ]
 }
 ```
 

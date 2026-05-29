@@ -88,10 +88,23 @@ For each reviewer in `activated_reviewers`, read its file at `reviewers/<name>.m
 
 Apply the `service_type`'s extra checks from `references/classification-guide.md`.
 
+#### Tool Policy
+
+Use deterministic tools when they are already available in the environment. Do not install dependencies, download rule packs, or make network calls unless the user explicitly approves it.
+
+For each tool attempt, record the outcome in `tool_runs[]`:
+- `tool`: command or tool name
+- `status`: `success|failed|unavailable|skipped`
+- `deterministic`: `true` for tool output, `false` for LLM-only fallback
+- `summary`: short result or failure reason
+
+If a tool is unavailable or skipped, continue with prompt-based review and add a matching item to `limitations[]`. Prompt-based findings must use `deterministic: false` and should not exceed `confidence: 0.85` unless backed by exact code evidence.
+
 Every finding from every reviewer must include:
 - `confidence` (0.0-1.0): see `references/output-schema.md` for the 6-band scale — 0.95+ tool exact, 0.85-0.95 tool+LLM, 0.70-0.85 strong heuristic, 0.50-0.70 plausible, 0.30-0.50 speculative, <0.30 gut feel
 - `deterministic` (true/false): from a tool (Semgrep, ESLint, AST) = true; LLM inference = false
 - `evidence_chain` (ordered list): trace from input → dataflow → unsafe sink → impact
+- `metadata` (object, optional): reviewer-specific extra fields such as CVE IDs, contract type, mutation details, or database table/column names
 
 ### Step 5: Aggregate Results
 
@@ -99,14 +112,15 @@ Combine all reviewer findings into `inspections[]` — a flat list. Map reviewer
 
 | Reviewer Field | `inspections[]` Field |
 |---|---|
-| `message` / `description` / `mechanism` | `impact` (what happens if not fixed) |
-| `suggestion` / `fix` / `remediation` / `test_to_add` | `recommendation` (concrete fix) |
+| `message` / `description` / `mechanism` / `why_survived` | `impact` (what happens if not fixed) |
+| `suggestion` / `fix` / `remediation` / `test_to_add` / `migration_path` | `recommendation` (concrete fix) |
 | `file` + `line` (separate fields) | `file` + `line` (keep as-is) |
 | `location` (combined string) | `file` + `line` (parse apart if possible) |
 | `rule_id` | `source` (prepend tool name: `"eslint:no-unused-vars"`) |
 | `type` | `type` (keep as-is) |
 | `severity` | `severity` (keep as-is) |
 | `confidence`, `deterministic`, `evidence_chain` | pass through as-is |
+| reviewer-specific fields | `metadata` |
 
 Assign a unique `id` (e.g., `SEC-001`, `PERF-003`) to each inspection.
 
@@ -118,7 +132,7 @@ Read `references/output-schema.md` for the exact structure. Root key is `code_in
 
 ### Step 6: Summarize
 
-After the JSON, output a one-line gate verdict: "Merge blocked: <reasons>" or "Merge allowed with <N> warnings". Then 2-3 sentences on the most impactful findings.
+Return exactly one JSON object with root key `code_inspector_result`. Do not output prose before or after the JSON. Put the gate verdict in `gates.verdict`, the short explanation in `summary.human_summary`, and the most impactful findings in `top_findings[]`.
 
 ## Parameters
 

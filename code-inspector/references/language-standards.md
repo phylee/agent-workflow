@@ -207,6 +207,68 @@ Use this reference to apply correct language conventions during code review.
 
 ## Other Languages (General Guidance)
 
+## Rust
+
+**Primary standard**: Rust API Guidelines
+**Tooling**: `cargo fmt`, `cargo clippy`, `cargo test`, `cargo audit`
+
+### Review focus
+- Ownership and lifetime complexity that hides unnecessary clones or borrowing workarounds.
+- `unwrap()` / `expect()` in library or request-handling code where errors should be returned.
+- Blocking I/O inside async runtimes; missing `.await`; holding locks across `.await`.
+- Insecure unsafe blocks: every `unsafe` block needs a small, local safety justification.
+- Public API compatibility: enum variant removals, trait method changes, changed error types.
+
+## Ruby
+
+**Primary standard**: Ruby Style Guide
+**Tooling**: RuboCop, Brakeman for Rails, Bundler audit
+
+### Review focus
+- Mass assignment and authorization gaps in Rails controllers.
+- SQL fragments built with interpolation instead of bound parameters.
+- `rescue StandardError` or bare `rescue` that swallows failures.
+- N+1 ActiveRecord queries; missing `includes`/`preload`.
+- Monkey patches and global mutable state.
+
+## PHP
+
+**Primary standard**: PSR-12
+**Tooling**: PHPStan/Psalm, PHP_CodeSniffer, Composer audit
+
+### Review focus
+- SQL injection through interpolated query strings.
+- XSS from unescaped template output.
+- Loose comparison (`==`) around security-sensitive values.
+- Missing CSRF protection on state-changing routes.
+- Unsafe file upload handling and path traversal.
+
+## C / C++
+
+**Primary standard**: Project style plus C++ Core Guidelines where applicable
+**Tooling**: clang-tidy, cppcheck, sanitizers, compiler warnings
+
+### Review focus
+- Buffer overflows, use-after-free, double free, lifetime bugs, unchecked pointer arithmetic.
+- Missing bounds checks and unchecked return values from allocation or I/O calls.
+- Data races and lock ordering problems.
+- Undefined behavior from signed overflow, invalid casts, or dangling references.
+- RAII violations in C++ and manual cleanup path gaps in C.
+
+## C#
+
+**Primary standard**: .NET coding conventions
+**Tooling**: Roslyn analyzers, dotnet format, dotnet test, NuGet audit
+
+### Review focus
+- Async correctness: missing `await`, `.Result`/`.Wait()` deadlock risk, missing cancellation tokens.
+- LINQ queries that cause N+1 database access or client-side evaluation.
+- Insecure deserialization, path traversal, weak crypto, and hardcoded secrets.
+- Exception swallowing and missing structured logging.
+- Public API and nullable reference type compatibility.
+
+---
+
 When reviewing languages not listed above, apply these universal principles:
 
 1. **Be consistent**: Whatever conventions the codebase uses, apply them uniformly

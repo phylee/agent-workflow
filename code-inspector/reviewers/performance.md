@@ -70,17 +70,23 @@ For the main algorithm paths in the changed code, estimate:
 ```json
 {
   "score": 0,
-  "anti_patterns": [
+  "issues": [
     {
+      "category": "performance",
       "type": "",
       "severity": "critical|high|medium|low",
       "confidence": 0.0,
       "deterministic": false,
       "source": "llm-inference",
+      "file": "",
+      "line": 0,
       "evidence_chain": [],
-      "location": "",
-      "mechanism": "",
-      "fix": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {
+        "time_complexity": "",
+        "space_complexity": ""
+      }
     }
   ],
   "complexity_analysis": {
@@ -91,4 +97,4 @@ For the main algorithm paths in the changed code, estimate:
 }
 ```
 
-Every anti-pattern must have `evidence` (exact code location), `mechanism` (why it's slow), and `fix` (concrete optimization). Never output "may impact performance" without pointing to the specific line and explaining the mechanism.
+Every performance issue must include exact `file` and `line`, an `impact` that explains the mechanism, and a concrete `recommendation`. Never output "may impact performance" without pointing to the specific line and explaining the mechanism.

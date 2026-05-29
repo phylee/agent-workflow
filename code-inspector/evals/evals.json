@@ -4,10 +4,10 @@
     {
       "id": 1,
       "prompt": "Review the file evals/files/user_service.py for code quality and security issues. Focus especially on security and code quality.",
-      "expected_output": "A comprehensive JSON code review report identifying: SQL injection vulnerabilities in make_user and get_user, use of MD5 for password hashing, command injection in process_file via os.system, bare except clause in delete_user, hardcoded secret key, class naming violation (user_manager should be PascalCase), mutable default argument pattern, dead code (send_email, send_email_v2), string concatenation in loop (ProcessUsers), global DB connection, and overly complex function signature in get_admin_users. Output should follow the code_inspector_result JSON schema with all four dimensions scored.",
+      "expected_output": "A comprehensive JSON code review report identifying: SQL injection vulnerabilities in make_user and get_user, use of MD5 for password hashing, command injection in process_file via os.system, bare except clause in delete_user, hardcoded secret key, class naming violation (user_manager should be PascalCase), mutable default argument pattern, dead code (send_email, send_email_v2), string concatenation in loop (ProcessUsers), global DB connection, and overly complex function signature in get_admin_users. Output should be exactly one JSON object following the code_inspector_result schema, with inspections, gates, top_findings, recommendations, confidence, deterministic flags, evidence_chain, tool_runs, and limitations.",
       "files": ["evals/files/user_service.py"],
       "expectations": [
-        "Output contains valid JSON with code_inspector_result root key",
+        "Output is exactly one valid JSON object with code_inspector_result root key and no prose outside JSON",
         "SQL injection vulnerability is identified in the security section",
         "MD5 hashing is flagged as a security issue",
         "os.system command injection is caught",
@@ -15,17 +15,19 @@
         "Bare except clause is identified as a code quality issue",
         "Class naming convention (user_manager -> UserManager) is identified",
         "Performance issue with string concatenation in loop is flagged",
-        "Overall score is provided across all four dimensions",
+        "Overall score and per-dimension summary scores are provided",
+        "Each inspection includes category, severity, confidence, deterministic, evidence_chain, impact, and recommendation",
+        "tool_runs and limitations are present even when tools are unavailable",
         "Recommendations are prioritized with effort estimates"
       ]
     },
     {
       "id": 2,
       "prompt": "Do a security-focused code review of evals/files/dashboard.js. This is a React admin panel component. Focus areas: security and performance.",
-      "expected_output": "A structured JSON review report focused heavily on security and performance of a React dashboard component. Must identify: hardcoded API key in frontend code, dangerouslySetInnerHTML XSS vulnerability, innerHTML assignment in exportUsers, missing useEffect dependency array causing infinite fetch loop, fetching 10000 users at once with no pagination, using var instead of const/let, CSRF token missing from DELETE request, loose equality (==) usage, missing error handling in fetch calls, and missing key.id property access pattern issues. Performance and security scores should be more detailed than other dimensions given the focus areas.",
+      "expected_output": "A structured JSON review report focused heavily on security and performance of a React dashboard component. Must identify: hardcoded API key in frontend code, dangerouslySetInnerHTML XSS vulnerability, innerHTML assignment in exportUsers, missing useEffect dependency array causing infinite fetch loop, fetching 10000 users at once with no pagination, using var instead of const/let, CSRF token missing from DELETE request, loose equality (==) usage, missing error handling in fetch calls, and missing key.id property access pattern issues. Performance and security findings should include exact locations, impact, remediation, confidence, deterministic flags, and evidence chains.",
       "files": ["evals/files/dashboard.js"],
       "expectations": [
-        "Output contains valid JSON with code_inspector_result root key",
+        "Output is exactly one valid JSON object with code_inspector_result root key and no prose outside JSON",
         "dangerouslySetInnerHTML is flagged as XSS vulnerability",
         "innerHTML assignment in exportUsers is caught as XSS",
         "Hardcoded API key is flagged as security issue",
@@ -34,16 +36,17 @@
         "Use of 'var' is flagged as code quality issue",
         "Missing CSRF protection on DELETE endpoint is noted",
         "Security section is more detailed than other sections (focus_areas respected)",
+        "coverage.api_test and coverage.e2e are present in the result",
         "Recommendations include specific remediation steps for XSS"
       ]
     },
     {
       "id": 3,
       "prompt": "Run a comprehensive code review on evals/files/main.go. Cover all aspects: code quality, tests, performance, and security.",
-      "expected_output": "A full JSON review of Go backend code. Must identify: SQL injection in getUsersHandler via fmt.Sprintf, command injection in backupHandler via user-controlled dbName, hardcoded database credentials and GitHub API token, goroutine leak in processItems (unbounded goroutine creation), error from db.Query ignored in getUsersHandler, returning nil/nil instead of error in getUserByID, panic in init instead of graceful error handling, string concatenation in loop in heavyProcess, deleteUser ignores returned error, and complete lack of tests. ExportUsersHandler has a shell command injection risk. Testing dimension should score very low since no tests exist.",
+      "expected_output": "A full JSON review of Go backend code. Must identify: SQL injection in getUsersHandler via fmt.Sprintf, command injection in backupHandler via user-controlled dbName, hardcoded database credentials and GitHub API token, goroutine leak in processItems (unbounded goroutine creation), error from db.Query ignored in getUsersHandler, returning nil/nil instead of error in getUserByID, panic in init instead of graceful error handling, string concatenation in loop in heavyProcess, deleteUser ignores returned error, and complete lack of tests. ExportUsersHandler has a shell command injection risk. Testing dimension should score very low since no tests exist, and gates should block merge for critical security issues.",
       "files": ["evals/files/main.go"],
       "expectations": [
-        "Output contains valid JSON with code_inspector_result root key",
+        "Output is exactly one valid JSON object with code_inspector_result root key and no prose outside JSON",
         "SQL injection via fmt.Sprintf is identified",
         "Command injection in backupHandler is flagged",
         "Hardcoded database credentials are caught",
@@ -54,7 +57,9 @@
         "Returning nil, nil instead of error is identified",
         "Complete lack of tests is reflected in test_coverage score",
         "String concatenation in loop performance issue is caught",
-        "All four dimensions are scored"
+        "gates.merge_blocked is true with explicit reasons",
+        "top_findings references the highest-risk inspection IDs",
+        "Overall score and per-dimension summary scores are provided"
       ]
     }
   ]

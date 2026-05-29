@@ -41,6 +41,7 @@ Examine correctness under concurrent execution. Only invoked when the change inc
   "score": 0,
   "issues": [
     {
+      "category": "concurrency",
       "severity": "critical|high|medium|low",
       "confidence": 0.0,
       "deterministic": false,
@@ -49,8 +50,9 @@ Examine correctness under concurrent execution. Only invoked when the change inc
       "line": 0,
       "type": "race_condition|deadlock_risk|goroutine_leak|unsynchronized_access|loop_variable_capture|missing_done_channel",
       "evidence_chain": [],
-      "message": "",
-      "suggestion": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {}
     }
   ]
 }

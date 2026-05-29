@@ -35,6 +35,7 @@ Check whether the code produces useful diagnostic signals for production debuggi
   "score": 0,
   "issues": [
     {
+      "category": "logging",
       "severity": "critical|high|medium|low",
       "confidence": 0.0,
       "deterministic": false,
@@ -43,8 +44,9 @@ Check whether the code produces useful diagnostic signals for production debuggi
       "line": 0,
       "type": "wrong_level|string_interpolation|pii_leak|missing_trace_id|console_log|missing_metric",
       "evidence_chain": [],
-      "message": "",
-      "suggestion": ""
+      "impact": "",
+      "recommendation": "",
+      "metadata": {}
     }
   ]
 }
