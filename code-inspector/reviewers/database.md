@@ -71,7 +71,10 @@ Examine SQL, migration scripts, ORM models, and query builders. Only invoked whe
       "metadata": {
         "table": "",
         "column": "",
-        "index_name": ""
+        "index_name": "",
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
       }
     }
   ],

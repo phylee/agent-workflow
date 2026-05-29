@@ -101,7 +101,10 @@ For the main algorithm paths in the changed code, estimate:
       "recommendation": "",
       "metadata": {
         "time_complexity": "",
-        "space_complexity": ""
+        "space_complexity": "",
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
       }
     }
   ],

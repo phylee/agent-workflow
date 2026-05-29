@@ -98,7 +98,10 @@ Beyond breaking changes, check API design quality:
       "recommendation": "",
       "metadata": {
         "contract_type": "openapi|graphql|protobuf|implicit",
-        "migration_path": ""
+        "migration_path": "",
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
       }
     }
   ]

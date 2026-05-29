@@ -63,7 +63,11 @@ Examine correctness under concurrent execution. Only invoked when the change inc
       "evidence_chain": [],
       "impact": "",
       "recommendation": "",
-      "metadata": {}
+      "metadata": {
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
+      }
     }
   ]
 }

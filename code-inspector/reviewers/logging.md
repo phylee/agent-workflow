@@ -56,7 +56,11 @@ Check whether the code produces useful diagnostic signals for production debuggi
       "evidence_chain": [],
       "impact": "",
       "recommendation": "",
-      "metadata": {}
+      "metadata": {
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
+      }
     }
   ]
 }

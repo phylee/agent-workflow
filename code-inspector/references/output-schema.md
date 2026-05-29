@@ -26,6 +26,12 @@ The review output is a strongly-structured inspection report. Every finding must
       }
     ],
     "limitations": [],
+    "review_delta": {
+      "mode": "initial|re-review",
+      "resolved_since_last": [],
+      "new_since_last": [],
+      "unchanged_since_last": []
+    },
     "inspections": [
       {
         "id": "",
@@ -46,7 +52,11 @@ The review output is a strongly-structured inspection report. Every finding must
         "evidence_chain": [],
         "impact": "",
         "recommendation": "",
-        "metadata": {}
+        "metadata": {
+          "auto_fixable": false,
+          "fix_command": "",
+          "suggested_patch": ""
+        }
       }
     ],
     "coverage": {
@@ -132,6 +142,15 @@ The review output is a strongly-structured inspection report. Every finding must
 ### limitations
 List missing context, unavailable tools, skipped network-dependent checks, or any reason the report may be incomplete.
 
+### review_delta
+Used when the input has `reviewer_context: "re-review"` and previous review data is available.
+- `mode`: `initial` for first review or `re-review` for follow-up reviews
+- `resolved_since_last`: previous finding IDs or stable finding fingerprints that no longer reproduce
+- `new_since_last`: current inspection IDs that were not present in the previous review
+- `unchanged_since_last`: finding IDs or fingerprints still present from the previous review
+
+When previous review data is unavailable, set `mode` from input, leave the arrays empty, and add a `limitations[]` entry.
+
 ### inspections (the core)
 
 A flat list of all findings across all dimensions. Every inspection must include:
@@ -141,14 +160,11 @@ A flat list of all findings across all dimensions. Every inspection must include
 - `type`: specific issue type within the category (e.g., `sql_injection`, `n_plus_1_query`, `breaking_change`)
 - `severity`: `critical` (blocks merge, causes crash/data loss), `high` (likely bug, should fix before deploy), `medium` (should fix in this sprint), `low` (cosmetic, nice to fix)
 - `confidence`: **0.0 to 1.0**. How certain is this finding?
-  - 0.9+: tool-verified, deterministic match
-  - 0.7-0.9: strong pattern match with some LLM interpretation
-  - 0.5-0.7: moderate confidence, likely correct but could be false positive
-  - <0.5: speculative — consumer should verify before acting
+  - Use the canonical bands in the Confidence Guidelines section below.
 - `deterministic`: **true** if from a tool (Semgrep, ESLint, AST, compiler, mutation testing), **false** if LLM inference or pattern matching
 - `source`: which tool or method produced this finding (e.g., `semgrep`, `eslint`, `golangci-lint`, `mutmut`, `llm-inference`)
-- `file` / `line`: exact location
-- `location`: structured location for CI annotations and PR comment bots. Use `start_line` and `end_line` from the new file when the finding maps to a diff; otherwise use the best source location.
+- `location`: canonical structured location for CI annotations and PR comment bots. Use `start_line` and `end_line` from the new file when the finding maps to a diff; otherwise use the best source location.
+- `file` / `line`: backward-compatible shorthand only. These fields must always equal `location.file` and `location.start_line`. New consumers should read `location`.
 - `diff_hunk`: the smallest relevant original diff hunk when available. Keep this short enough for machine consumers; do not include unrelated hunks.
 - `evidence_chain`: **ordered list of observations** tracing from input to impact:
   - `["user input from query param 'search'", "passed to fmt.Sprintf without sanitization", "executed as raw SQL via db.Query()", "allows attacker to read/modify/delete all user data"]`
@@ -157,6 +173,9 @@ A flat list of all findings across all dimensions. Every inspection must include
 - `impact`: what happens if this is not fixed
 - `recommendation`: concrete fix with code example where possible
 - `metadata`: category-specific machine-readable details such as `cwe_id`, `cve_id`, `contract_type`, `mutation`, `table`, `column`, `migration_path`, or `tool_rule_url`
+  - `auto_fixable`: optional boolean. True when the issue can be fixed mechanically by a known tool or safe patch.
+  - `fix_command`: optional command string for deterministic auto-fix tools, such as `ruff check --fix <file>` or `npx eslint --fix <file>`.
+  - `suggested_patch`: optional unified diff for a concrete fix. Only include when the patch is small, local, and directly supported by the evidence chain.
 
 ### coverage
 - `test_existence`: whether expected test layers exist for changed source files. This is about presence, not quality.

@@ -93,7 +93,10 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
       "recommendation": "",
       "metadata": {
         "security_surface": "input|auth|data|storage|network|browser|dependency|infra",
-        "cwe_id": ""
+        "cwe_id": "",
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
       }
     }
   ],

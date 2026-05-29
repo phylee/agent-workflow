@@ -56,7 +56,11 @@ Examine how the code deals with failure — distinct from testing, this is about
       "evidence_chain": [],
       "impact": "",
       "recommendation": "",
-      "metadata": {}
+      "metadata": {
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
+      }
     }
   ]
 }

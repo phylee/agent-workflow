@@ -132,12 +132,14 @@ For each tool attempt, record the outcome in `tool_runs[]`:
 If a tool is unavailable or skipped, continue with prompt-based review and add a matching item to `limitations[]`. Prompt-based findings must use `deterministic: false` and should not exceed `confidence: 0.85` unless backed by exact code evidence.
 
 Every finding from every reviewer must include:
-- `confidence` (0.0-1.0): see `references/output-schema.md` for the 6-band scale — 0.95+ tool exact, 0.85-0.95 tool+LLM, 0.70-0.85 strong heuristic, 0.50-0.70 plausible, 0.30-0.50 speculative, <0.30 gut feel
+- `confidence` (0.0-1.0): use the exact bands in `references/output-schema.md`; do not redefine thresholds locally
 - `deterministic` (true/false): from a tool (Semgrep, ESLint, AST) = true; LLM inference = false
 - `location` with `file`, `start_line`, and `end_line`: use new-file line numbers for PR annotations when possible
 - `diff_hunk`: smallest relevant changed hunk when available, or `""` if the issue is outside the diff context
 - `evidence_chain` (ordered list): trace from input → dataflow → unsafe sink → impact
-- `metadata` (object, optional): reviewer-specific extra fields such as CVE IDs, contract type, mutation details, or database table/column names
+- `metadata` (object, optional): reviewer-specific extra fields such as CVE IDs, contract type, mutation details, database table/column names, `auto_fixable`, `fix_command`, or `suggested_patch`
+
+In `reviewer_context: "re-review"` mode, compare current findings against the previous review when available. Populate `review_delta.resolved_since_last[]`, `review_delta.new_since_last[]`, and `review_delta.unchanged_since_last[]` using stable finding identity: category + type + normalized location + evidence root cause.
 
 ### Step 5: Aggregate Results
 
@@ -147,15 +149,17 @@ Combine all reviewer findings into `inspections[]` — a flat list. Map reviewer
 |---|---|
 | `message` / `description` / `mechanism` / `why_survived` | `impact` (what happens if not fixed) |
 | `suggestion` / `fix` / `remediation` / `test_to_add` / `migration_path` | `recommendation` (concrete fix) |
-| `file` + `line` (separate fields) | `file` + `line` (keep as-is) |
-| `file` + `start_line` + `end_line` | `location` |
+| `file` + `line` (separate fields) | `location.file` + `location.start_line`; also copy to `file` + `line` shorthand for compatibility |
+| `file` + `start_line` + `end_line` | `location` and compatibility shorthand |
 | raw changed hunk text | `diff_hunk` |
-| `location` (combined string) | `file` + `line` (parse apart if possible) |
+| `location` (combined string) | `location` (parse apart if possible) |
 | `rule_id` | `source` (prepend tool name: `"eslint:no-unused-vars"`) |
 | `type` | `type` (keep as-is) |
 | `severity` | `severity` (keep as-is) |
 | `confidence`, `deterministic`, `evidence_chain` | pass through as-is |
 | reviewer-specific fields | `metadata` |
+
+`location` is canonical. `file` and `line` are backward-compatible shorthand only and must always equal `location.file` and `location.start_line`.
 
 Assign a unique `id` (e.g., `SEC-001`, `PERF-003`) to each inspection.
 

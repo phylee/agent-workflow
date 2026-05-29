@@ -98,7 +98,10 @@ After processing the tool output, also check for issues that linters CAN'T catch
       "impact": "",
       "recommendation": "",
       "metadata": {
-        "rule_id": "B007"
+        "rule_id": "B007",
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
       }
     }
   ],
@@ -114,5 +117,6 @@ After processing the tool output, also check for issues that linters CAN'T catch
 - `tool_findings_count`: raw count before merging, to show the scale of tool output
 - `rule_id`: the tool's rule identifier (e.g., `B007`, `no-unused-vars`, `errcheck`)
 - `standards_compliance`: inferred from the tool output — if ESLint passes, `eslint` score is high
+- For tool-fixable lint findings, set `metadata.auto_fixable: true` and include `metadata.fix_command` when the tool exposes a safe fix mode (for example `ruff check --fix <file>` or `npx eslint --fix <file>`).
 
 Score 0-100. If lint tool passes clean: 95+. If prompt-based fallback: cap at 80 and note the limitation.

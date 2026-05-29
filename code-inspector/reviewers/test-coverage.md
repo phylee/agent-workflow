@@ -208,7 +208,10 @@ Language/tool signals:
       "metadata": {
         "journey": "",
         "mutation": "",
-        "endpoint": ""
+        "endpoint": "",
+        "auto_fixable": false,
+        "fix_command": "",
+        "suggested_patch": ""
       }
     }
   ]
