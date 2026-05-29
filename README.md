@@ -20,6 +20,18 @@
 | Concurrency | 有多线程/异步代码时 | LLM 检测 |
 | API Design | 有接口/协议变更时 | OpenAPI diff / buf breaking |
 
+## 安装
+
+```bash
+# 克隆仓库
+git clone https://github.com/phylee/agent-workflow.git
+
+# 安装 skill
+cp -r agent-workflow/code-inspector ~/.claude/skills/code-inspector
+```
+
+安装后重启 Claude Code 会话即可使用。
+
 ## 使用方式
 
 ### 在 Claude Code 中调用
