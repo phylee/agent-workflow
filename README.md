@@ -13,7 +13,8 @@
 git clone https://github.com/phylee/agent-workflow.git
 
 # 安装 skill
-cp -r agent-workflow/code-inspector ~/.claude/skills/code-inspector
+rm -rf ~/.claude/skills/code-inspector
+cp -R agent-workflow/code-inspector ~/.claude/skills/code-inspector
 ```
 
 安装后重启 Claude Code 会话即可使用。
