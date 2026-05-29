@@ -59,6 +59,7 @@
         "Hardcoded database credentials are caught",
         "Hardcoded GitHub API token in source is flagged",
         "Goroutine leak (unbounded goroutine creation) is identified",
+        "concurrency reviewer is activated and applied to the goroutine leak",
         "Ignored error from db.Query is flagged",
         "panic in init() is flagged as code quality issue",
         "Returning nil, nil instead of error is identified",
@@ -148,25 +149,18 @@
       "id": 7,
       "scenario": "Structured re-review from unified diff and previous_result",
       "tags": ["python", "security", "re-review", "git-diff", "previous-result", "step2-context"],
-      "prompt": "Run code-inspector with structured input: language python, reviewer_context re-review, git_diff from evals/files/review_delta.patch, changed_files [\"evals/files/report_export.py\"], and previous_result containing prior findings for hardcoded_secret, weak_hash_md5, and command_injection_shell. Review the unified diff as the source of truth.",
+      "prompt": "Run code-inspector with structured input: language python, reviewer_context re-review, git_diff from evals/files/review_delta.patch, changed_files [\"evals/files/report_export.py\"], and previous_result loaded from evals/files/review_delta_previous_result.json. Review the unified diff as the source of truth.",
       "expected_output": "A re-review JSON report that consumes structured previous_result rather than relying on prose. It should populate review_delta by fingerprinting previous findings against the new diff: hardcoded_secret resolved, command_injection_shell resolved or downgraded, weak_hash_md5 still present, and path_traversal newly identified from reports/ + name.",
       "files": [
-        "evals/files/review_delta.patch"
+        "evals/files/review_delta.patch",
+        "evals/files/review_delta_previous_result.json"
       ],
       "structured_input": {
         "language": "python",
         "reviewer_context": "re-review",
         "git_diff_file": "evals/files/review_delta.patch",
         "changed_files": ["evals/files/report_export.py"],
-        "previous_result": {
-          "code_inspector_result": {
-            "inspections": [
-              {"id": "SEC-001", "category": "security", "type": "hardcoded_secret", "location": {"file": "evals/files/report_export.py", "start_line": 4, "end_line": 4}, "evidence_chain": ["SECRET_KEY is hardcoded in source"]},
-              {"id": "SEC-002", "category": "security", "type": "weak_hash_md5", "location": {"file": "evals/files/report_export.py", "start_line": 8, "end_line": 8}, "evidence_chain": ["password is hashed with hashlib.md5"]},
-              {"id": "SEC-003", "category": "security", "type": "command_injection_shell", "location": {"file": "evals/files/report_export.py", "start_line": 12, "end_line": 12}, "evidence_chain": ["name is concatenated into os.system command"]}
-            ]
-          }
-        }
+        "previous_result_file": "evals/files/review_delta_previous_result.json"
       },
       "expectations": [
         "Input handling supports previous_result as structured prior code_inspector_result data",
@@ -175,6 +169,55 @@
         "review_delta.unchanged_since_last or new_since_last includes weak_hash_md5",
         "Path traversal from reports/ + name is identified from the unified diff context",
         "Each current inspection includes diff_hunk populated from the patch"
+      ]
+    },
+    {
+      "id": 8,
+      "scenario": "Rust unsafe and unwrap security/code-quality review",
+      "tags": ["rust", "security", "code-quality", "unsafe", "unwrap", "initial-review"],
+      "prompt": "Review evals/files/rust_service.rs for Rust-specific safety, error handling, and security issues.",
+      "expected_output": "A structured JSON review that applies Rust-specific branches. It should flag unsafe copy_unchecked without a safety contract, unwrap in load_config and parse_port on production paths, and missing error propagation. It should mention cargo clippy/cargo audit availability in tool_runs or limitations.",
+      "files": ["evals/files/rust_service.rs"],
+      "expectations": [
+        "Classification includes Rust",
+        "Unsafe block/function is reviewed with a missing safety contract finding",
+        "unwrap or expect in production path is flagged",
+        "Recommendation suggests returning Result or validating inputs",
+        "tool_runs or limitations mention Rust tools such as cargo clippy or cargo audit"
+      ]
+    },
+    {
+      "id": 9,
+      "scenario": "Python asyncio concurrency reviewer activation",
+      "tags": ["python", "asyncio", "concurrency", "worker", "step3-classification"],
+      "prompt": "Review evals/files/async_worker.py as an async worker. Focus on concurrency, error handling, and performance.",
+      "expected_output": "A structured JSON review that activates the concurrency reviewer for Python asyncio. It should identify unbounded task creation via asyncio.create_task without lifecycle management, blocking time.sleep inside async def, and unhandled task exceptions from send_result.",
+      "files": ["evals/files/async_worker.py"],
+      "expectations": [
+        "concurrency reviewer is activated",
+        "Unbounded asyncio.create_task or task leak is identified",
+        "Blocking time.sleep inside async def is flagged",
+        "Unhandled task exception or missing task supervision is flagged",
+        "Recommendations mention cancellation, backpressure, and asyncio.sleep or async-safe IO"
+      ]
+    },
+    {
+      "id": 10,
+      "scenario": "Infra Kubernetes and Docker security review",
+      "tags": ["infra", "kubernetes", "dockerfile", "security", "logging", "service-type-infra"],
+      "prompt": "Review evals/files/infra/deployment.yaml and evals/files/infra/Dockerfile as an infra change. Focus on security, secrets, and deployment hardening.",
+      "expected_output": "A structured JSON review that classifies the change as infra and applies infra security checks. It should flag hardcoded secrets in Kubernetes env and Dockerfile ENV, latest tag usage, missing resource limits/readiness/liveness probes, and public LoadBalancer exposure where appropriate.",
+      "files": [
+        "evals/files/infra/deployment.yaml",
+        "evals/files/infra/Dockerfile"
+      ],
+      "expectations": [
+        "service_type is classified as infra",
+        "security reviewer is activated with infra surface",
+        "Hardcoded secret in Kubernetes manifest is flagged",
+        "Hardcoded API_KEY in Dockerfile is flagged",
+        "Use of latest image tag or missing pinned image version is flagged",
+        "Missing resource limits or health probes are flagged"
       ]
     }
   ]

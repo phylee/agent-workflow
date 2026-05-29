@@ -163,7 +163,7 @@ When previous review data is unavailable, set `mode` from input, leave the array
 Finding fingerprint calculation for re-review:
 1. Normalize `category` and `type` to lowercase.
 2. Normalize `location.file` by removing repo root and converting path separators to `/`.
-3. Prefer `metadata.cwe_id`, `metadata.security_surface`, `metadata.contract_type`, `metadata.endpoint`, `metadata.table`, or `metadata.symbol` when present.
+3. Add all present stable metadata fields in this exact order: `metadata.cwe_id`, `metadata.security_surface`, `metadata.contract_type`, `metadata.endpoint`, `metadata.table`, `metadata.symbol`. Omit missing or empty fields. Including all present fields avoids ambiguity when, for example, both `cwe_id` and `security_surface` exist.
 4. Add the first stable root-cause item from `evidence_chain[]` after removing line numbers, quoted literal values longer than 40 characters, and whitespace differences.
 5. Hash the joined parts with SHA-256 and store or compare the first 16 hex characters.
 

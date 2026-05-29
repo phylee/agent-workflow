@@ -140,7 +140,10 @@ Every finding from every reviewer must include:
 - `evidence_chain` (ordered list): trace from input → dataflow → unsafe sink → impact
 - `metadata` (object, optional): reviewer-specific extra fields such as CVE IDs, contract type, mutation details, database table/column names, `auto_fixable`, `fix_command`, or `suggested_patch`
 
-In `reviewer_context: "re-review"` mode, compare current findings against the previous review when available. Populate `review_delta.resolved_since_last[]`, `review_delta.new_since_last[]`, and `review_delta.unchanged_since_last[]` using stable finding identity: category + type + normalized location + evidence root cause.
+In `reviewer_context: "re-review"` mode, compare current findings against the previous review when available. Use the fingerprint algorithm in `references/output-schema.md`:
+1. Compute a fingerprint for every `previous_result.code_inspector_result.inspections[]` item and build the previous fingerprint set.
+2. Compute a fingerprint for every current `inspections[]` item and build the current fingerprint set.
+3. Populate `review_delta.resolved_since_last[]`, `review_delta.new_since_last[]`, and `review_delta.unchanged_since_last[]` from previous-current set differences and intersections.
 
 ### Step 5: Aggregate Results
 

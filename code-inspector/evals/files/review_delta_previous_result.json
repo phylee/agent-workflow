@@ -1,0 +1,68 @@
+{
+  "code_inspector_result": {
+    "inspections": [
+      {
+        "id": "SEC-001",
+        "category": "security",
+        "type": "hardcoded_secret",
+        "severity": "critical",
+        "confidence": 0.95,
+        "deterministic": true,
+        "source": "llm-fixture",
+        "location": {
+          "file": "evals/files/report_export.py",
+          "start_line": 4,
+          "end_line": 4
+        },
+        "evidence_chain": ["SECRET_KEY is hardcoded in source"],
+        "impact": "Production secret is committed to source control.",
+        "recommendation": "Load the secret from a secret manager or environment variable.",
+        "metadata": {
+          "security_surface": "storage"
+        }
+      },
+      {
+        "id": "SEC-002",
+        "category": "security",
+        "type": "weak_hash_md5",
+        "severity": "high",
+        "confidence": 0.95,
+        "deterministic": true,
+        "source": "llm-fixture",
+        "location": {
+          "file": "evals/files/report_export.py",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "evidence_chain": ["password is hashed with hashlib.md5"],
+        "impact": "Fast unsalted hashes are vulnerable to offline cracking.",
+        "recommendation": "Use Argon2, bcrypt, or scrypt with a unique salt.",
+        "metadata": {
+          "security_surface": "storage",
+          "cwe_id": "CWE-327"
+        }
+      },
+      {
+        "id": "SEC-003",
+        "category": "security",
+        "type": "command_injection_shell",
+        "severity": "critical",
+        "confidence": 0.95,
+        "deterministic": true,
+        "source": "llm-fixture",
+        "location": {
+          "file": "evals/files/report_export.py",
+          "start_line": 12,
+          "end_line": 12
+        },
+        "evidence_chain": ["name is concatenated into os.system command"],
+        "impact": "User-controlled input can execute shell metacharacters.",
+        "recommendation": "Use subprocess with an argument list and validate the path.",
+        "metadata": {
+          "security_surface": "input",
+          "cwe_id": "CWE-78"
+        }
+      }
+    ]
+  }
+}
