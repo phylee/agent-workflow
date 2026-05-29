@@ -28,6 +28,14 @@ Check whether the code produces useful diagnostic signals for production debuggi
 - Are important events incrementing counters? (login failures, rate limit hits, data exports, payment attempts)
 - Would an on-call engineer be able to diagnose a production issue at 3am from the signals this code emits? Flag silent failure paths — places where an error can occur with no log and no metric.
 
+### Language / Runtime Branches
+
+- **Python/Ruby/PHP**: flag `print`/`puts`/`var_dump`/`error_log` in production paths, missing request IDs in framework middleware, and exception handlers that log without structured context.
+- **JavaScript/TypeScript**: flag browser `console.*` separately from Node logs. In Node services, prefer pino/winston/bunyan-style structured logs and request-scoped context.
+- **Go**: prefer structured logger fields (`slog`, zap, zerolog). Check that goroutine and context errors retain request/job identifiers.
+- **Java/Kotlin/C#**: prefer SLF4J/Logback/Log4j or Microsoft.Extensions.Logging structured templates. Check MDC/scopes/correlation IDs and avoid string-concatenated logs.
+- **Rust**: prefer `tracing` spans/fields over plain `println!` or string-only logs.
+
 ## Output
 
 ```json
@@ -42,6 +50,8 @@ Check whether the code produces useful diagnostic signals for production debuggi
       "source": "llm-inference",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "type": "wrong_level|string_interpolation|pii_leak|missing_trace_id|console_log|missing_metric",
       "evidence_chain": [],
       "impact": "",

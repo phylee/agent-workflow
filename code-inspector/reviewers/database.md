@@ -38,6 +38,15 @@ Examine SQL, migration scripts, ORM models, and query builders. Only invoked whe
 - `save()` called in a loop instead of `bulk_create`/`bulk_insert`.
 - Loading full objects when only a few columns are needed — suggest `.only()`/`.select()`.
 
+### Language / ORM Branches
+
+- **Java/Kotlin Hibernate/JPA**: check lazy collection access in loops, missing `join fetch`/entity graphs, `OpenSessionInView` masking N+1, cascade rules, transaction boundaries, optimistic locking (`@Version`), and JPQL/string query injection.
+- **Python SQLAlchemy/Django ORM**: check lazy relationship access in loops, missing `selectinload`/`joinedload` or `select_related`/`prefetch_related`, unsafe `text()`/raw SQL interpolation, transaction/session lifecycle, and query-count tests.
+- **Go database/sql/GORM/sqlx**: check ignored `rows.Err()`, missing `rows.Close()`, context-less queries, `fmt.Sprintf` SQL, GORM `Preload` needs, N+1 loops, and connection pool settings.
+- **Ruby ActiveRecord**: check N+1 loops without `includes`, unsafe `where` string interpolation, callbacks causing hidden writes, transaction coverage, and migration reversibility.
+- **PHP Laravel/Eloquent/Doctrine**: check eager loading, mass assignment, query builder raw expressions, migration rollback, and transaction boundaries.
+- **Rust sqlx/diesel/sea-orm**: check compile-time query coverage when available, transaction lifetimes, connection pool use, and raw SQL interpolation.
+
 ## Output
 
 ```json
@@ -53,6 +62,8 @@ Examine SQL, migration scripts, ORM models, and query builders. Only invoked whe
       "source": "",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "type": "migration_safety|schema_design|missing_index|redundant_index|query_pattern|data_integrity|orm_antipattern",
       "evidence_chain": [],
       "impact": "",

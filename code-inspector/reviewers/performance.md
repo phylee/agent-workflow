@@ -57,7 +57,21 @@ For `.jsx`/`.tsx`/`.vue`/`.svelte` files:
 | Unoptimized image | `<img>` with 2MB photo but displayed at 200px — waste of bandwidth and decode time | low |
 | Missing lazy loading | All routes/components bundled eagerly — initial load includes pages user never visits | low |
 
-## Step 5: Complexity Analysis
+## Step 5: Performance Test Coverage
+
+If a change touches hot paths, expensive queries, serialization, image/media pipelines, workers, queues, or concurrency, check whether performance tests exist. Do not treat code inspection as a substitute for a regression test.
+
+Language/tool signals:
+- **Go**: `BenchmarkXxx`, `go test -bench`, `benchstat`, allocation assertions.
+- **Python**: `pytest-benchmark`, query-count assertions, Locust for load scenarios.
+- **JS/TS**: k6/Artillery for APIs, Lighthouse/Web Vitals budgets for frontend, Benchmark.js for local hot paths.
+- **Java/Kotlin**: JMH for microbenchmarks, Gatling/JMeter for load.
+- **Rust**: Criterion benchmarks.
+- **C#**: BenchmarkDotNet.
+
+Flag missing performance tests when the change creates or modifies an identified hot path and there is no benchmark, load test, or regression threshold.
+
+## Step 6: Complexity Analysis
 
 For the main algorithm paths in the changed code, estimate:
 
@@ -80,6 +94,8 @@ For the main algorithm paths in the changed code, estimate:
       "source": "llm-inference",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "evidence_chain": [],
       "impact": "",
       "recommendation": "",

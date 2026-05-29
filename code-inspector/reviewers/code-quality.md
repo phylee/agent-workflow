@@ -14,9 +14,20 @@ Auto-detect the language and run the appropriate tool on the changed files:
 | Go | golangci-lint | `golangci-lint run <files>` |
 | Rust | Clippy | `cargo clippy` |
 | Ruby | RuboCop | `rubocop <files>` |
+| PHP | PHP_CodeSniffer / PHPStan | `phpcs <files>` or `phpstan analyse <files>` |
 | Java | Checkstyle | `mvn checkstyle:check` |
+| C/C++ | clang-tidy / cppcheck | `clang-tidy <files>` or `cppcheck <files>` |
+| C# | Roslyn analyzers | `dotnet format --verify-no-changes` and `dotnet build` |
 
 Run the tool. If it succeeds with zero findings, score 95-100 and note that static analysis passed clean. If the tool is not installed, fall back to prompt-based review but explicitly note "Static analysis tool not available — findings are LLM-based and may be incomplete."
+
+## Language-Specific Branches
+
+Apply the language's behavior model before assigning severity:
+- **Python/Ruby/PHP**: dynamic typing means many interface and attribute mistakes are runtime-only; give higher severity to missing tests around renamed fields, optional values, and framework magic.
+- **TypeScript/Java/C#/Rust**: compiler/type errors are high-confidence deterministic findings; do not duplicate compiler diagnostics as speculative style issues.
+- **Go/Rust/C/C++**: resource lifetime, error returns/results, allocation, and concurrency semantics are often correctness issues, not just style.
+- **JavaScript**: distinguish browser, Node, and build-time code; globals and async ordering can be functional bugs even when lint passes.
 
 ## Step 2: LLM Interpretation
 
@@ -79,6 +90,8 @@ After processing the tool output, also check for issues that linters CAN'T catch
       "source": "",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "type": "bug-risk|style|complexity|anti-pattern|dead-code",
       "rule_id": "B007",
       "evidence_chain": [],

@@ -29,6 +29,15 @@ Examine correctness under concurrent execution. Only invoked when the change inc
 - **JS/Node**: fire-and-forget async calls without `.catch()`. Unhandled Promise rejections.
 - Coroutines that are created but never awaited.
 
+### Language-Specific Branches
+
+- **Go**: prioritize goroutine lifecycle, unbounded goroutine creation, loop variable capture, channel close discipline, context cancellation, WaitGroup misuse, data races on maps/slices, and locks held across blocking sends/receives. Use `go test -race` when available.
+- **JavaScript/TypeScript**: there are usually no memory data races in single-threaded Node/browser code; prioritize async ordering bugs, unhandled promises, missing cancellation with `AbortController`, stale React closures, worker-thread shared memory, and event-loop blocking.
+- **Python**: distinguish threads, processes, and asyncio. Prioritize blocking calls inside `async def`, forgotten awaits, task leaks from `asyncio.create_task`, shared mutable state across threads, missing locks around caches, and multiprocessing serialization pitfalls.
+- **Java/Kotlin/C#**: prioritize executor/thread-pool saturation, lock ordering, concurrent collection misuse, futures/coroutines/tasks not observed, cancellation token propagation, and transaction/session objects shared across threads.
+- **Rust**: prioritize `Send`/`Sync` assumptions around unsafe code, locks held across `.await`, task cancellation, channel backpressure, and poisoning/unwrap behavior after panics.
+- **Ruby/PHP**: only flag concurrency when the runtime or framework actually uses threads, fibers, workers, queues, or shared external state. Avoid generic race claims for request-isolated code without evidence.
+
 ### Thread Safety of Dependencies
 - Are shared caches, connection pools documented as thread-safe? Used correctly?
 - Lazy initialization without synchronization (double-checked locking, `sync.Once`).
@@ -48,6 +57,8 @@ Examine correctness under concurrent execution. Only invoked when the change inc
       "source": "llm-inference",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "type": "race_condition|deadlock_risk|goroutine_leak|unsynchronized_access|loop_variable_capture|missing_done_channel",
       "evidence_chain": [],
       "impact": "",

@@ -27,6 +27,11 @@ Run the appropriate tools on the changed files. If a tool is not installed, note
 | JavaScript/TypeScript | `semgrep --config=auto` | `trufflehog` | `npm audit` |
 | Go | `semgrep --config=auto` or `gosec` | `gitleaks` | `go vulncheck` or `osv-scanner` |
 | Java | `semgrep --config=auto` or `spotbugs` | `trufflehog` | `mvn dependency:analyze` + OSV |
+| Rust | `cargo audit`, `semgrep --config=auto` | `gitleaks` | `cargo audit` or OSV |
+| Ruby | `brakeman` or `semgrep --config=auto` | `trufflehog` | `bundle audit` |
+| PHP | `psalm`/`phpstan` security rules or `semgrep --config=auto` | `trufflehog` | `composer audit` |
+| C/C++ | CodeQL, clang-tidy security checks, cppcheck | `gitleaks` | OSV or distro/package scanner |
+| C# | Roslyn security analyzers, CodeQL | `trufflehog` | `dotnet list package --vulnerable` |
 | All | `trivy fs <dir>` | - | `trivy fs <dir>` |
 
 For each tool run, capture:
@@ -42,6 +47,13 @@ For each finding:
 2. **Severity re-assessment**: the tool's default severity may be wrong. A hardcoded test credential in `tests/fixtures/` is low; a hardcoded production API key in `src/config.ts` is critical.
 3. **Explain**: translate tool output into human language. "Semgrep detected `python.sqlalchemy.security.sqlalchemy-sqli`" → "SQLAlchemy query uses string formatting instead of parameterized queries, allowing SQL injection"
 4. **Prioritize**: rank by actual risk. A SQL injection in a login handler is more urgent than a missing CSP header.
+
+### Language-Specific Branches
+
+- **Python/Ruby/PHP**: prioritize framework security defaults, template escaping, mass assignment, unsafe deserialization, raw SQL helpers, file upload/path traversal, and dynamic eval/metaprogramming.
+- **JavaScript/TypeScript**: distinguish frontend and backend. Frontend secrets are exposed by definition; browser XSS/CSRF/storage issues differ from Node command injection, SSRF, and prototype pollution.
+- **Go/Rust/C/C++**: prioritize memory/lifetime/unsafe boundaries, command execution, TLS verification, path handling, and context/cancellation around external calls.
+- **Java/Kotlin/C#**: prioritize deserialization, XML/XXE, Spring/ASP.NET authorization annotations, ORM query construction, crypto APIs, and dependency CVEs.
 
 ## Step 4: Dependency Check
 
@@ -74,6 +86,8 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
       "source": "",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "evidence_chain": [],
       "impact": "",
       "recommendation": "",

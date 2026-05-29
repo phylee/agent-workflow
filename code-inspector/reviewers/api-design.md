@@ -61,6 +61,14 @@ Beyond breaking changes, check API design quality:
 - **Sensitive field leakage**: do any responses include password hashes, internal IDs, tokens, PII that shouldn't be exposed?
 - **Schema consistency**: do all endpoints follow the same error envelope, pagination format, date format, field naming?
 
+### Language / Framework Branches
+
+- **TypeScript/JavaScript**: check runtime validation separately from TypeScript types. Types disappear at runtime; endpoints need zod/class-validator/Joi/Yup or framework pipes/middleware.
+- **Python**: FastAPI/Pydantic gives runtime validation when models are used; Flask/Django handlers need explicit serializers/forms/schemas.
+- **Go**: generated OpenAPI/protobuf types help compile-time shape, but request validation, auth middleware, context timeouts, and response envelope consistency still need explicit checks.
+- **Java/Kotlin/C#**: check annotations/attributes, validation groups, nullable contracts, exception mappers, and generated API docs.
+- **Ruby/PHP**: check strong parameters/request validators, route constraints, resource serializers, and authorization policy hooks.
+
 ## Output
 
 ```json
@@ -82,6 +90,8 @@ Beyond breaking changes, check API design quality:
       "source": "",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "type": "breaking_change|inconsistent_signature|missing_idempotency|poor_naming|bool_parameter_smell|too_many_params|sensitive_field_leak|missing_validation|missing_pagination|missing_rate_limit",
       "evidence_chain": [],
       "impact": "",

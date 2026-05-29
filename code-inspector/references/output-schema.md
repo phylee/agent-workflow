@@ -37,6 +37,12 @@ The review output is a strongly-structured inspection report. Every finding must
         "source": "",
         "file": "",
         "line": 0,
+        "location": {
+          "file": "",
+          "start_line": 0,
+          "end_line": 0
+        },
+        "diff_hunk": "",
         "evidence_chain": [],
         "impact": "",
         "recommendation": "",
@@ -44,6 +50,18 @@ The review output is a strongly-structured inspection report. Every finding must
       }
     ],
     "coverage": {
+      "test_existence": {
+        "source_files_changed": 0,
+        "source_files_with_nearby_tests": 0,
+        "required_test_layers": ["unit", "api", "e2e", "performance"],
+        "missing_test_layers": []
+      },
+      "test_quality": {
+        "assertion_density": 0.0,
+        "mutation_score": 0,
+        "behavior_assertions_found": 0,
+        "mock_only_tests_detected": false
+      },
       "unit_test": {
         "test_files_found": 0,
         "changed_lines_covered_pct": 0,
@@ -62,6 +80,13 @@ The review output is a strongly-structured inspection report. Every finding must
         "critical_journeys_covered": 0,
         "total_critical_journeys": 0,
         "pseudo_e2e_detected": false
+      },
+      "performance_test": {
+        "benchmarks_found": 0,
+        "load_tests_found": 0,
+        "regression_thresholds_defined": false,
+        "hot_paths_covered": 0,
+        "total_hot_paths": 0
       }
     },
     "gates": {
@@ -123,6 +148,8 @@ A flat list of all findings across all dimensions. Every inspection must include
 - `deterministic`: **true** if from a tool (Semgrep, ESLint, AST, compiler, mutation testing), **false** if LLM inference or pattern matching
 - `source`: which tool or method produced this finding (e.g., `semgrep`, `eslint`, `golangci-lint`, `mutmut`, `llm-inference`)
 - `file` / `line`: exact location
+- `location`: structured location for CI annotations and PR comment bots. Use `start_line` and `end_line` from the new file when the finding maps to a diff; otherwise use the best source location.
+- `diff_hunk`: the smallest relevant original diff hunk when available. Keep this short enough for machine consumers; do not include unrelated hunks.
 - `evidence_chain`: **ordered list of observations** tracing from input to impact:
   - `["user input from query param 'search'", "passed to fmt.Sprintf without sanitization", "executed as raw SQL via db.Query()", "allows attacker to read/modify/delete all user data"]`
   - Each step links to the next, forming a traceable path from root cause to consequence
@@ -132,6 +159,8 @@ A flat list of all findings across all dimensions. Every inspection must include
 - `metadata`: category-specific machine-readable details such as `cwe_id`, `cve_id`, `contract_type`, `mutation`, `table`, `column`, `migration_path`, or `tool_rule_url`
 
 ### coverage
+- `test_existence`: whether expected test layers exist for changed source files. This is about presence, not quality.
+- `test_quality`: whether tests verify behavior. Prefer mutation score when available; otherwise use assertion density, behavior assertions, and mock-only detection.
 - `unit_test`: test quality metrics
   - `changed_lines_covered_pct`: % of changed lines exercised by tests (informational only — do not trust)
   - `assertion_density`: assertions per test
@@ -145,6 +174,11 @@ A flat list of all findings across all dimensions. Every inspection must include
 - `e2e`: journey coverage
   - `critical_journeys_covered` / `total_critical_journeys`
   - `pseudo_e2e_detected`: true if existing E2E tests are page-visit-only or fully mocked
+- `performance_test`: benchmark/load/regression-test coverage for changed hot paths
+  - `benchmarks_found`: micro or component benchmarks, such as Go benchmarks, pytest-benchmark, JMH, BenchmarkDotNet
+  - `load_tests_found`: scenario/load tests, such as k6, Locust, Gatling, Artillery, JMeter
+  - `regression_thresholds_defined`: true only when the test has an explicit pass/fail budget
+  - `hot_paths_covered` / `total_hot_paths`: changed performance-sensitive paths with test coverage
 
 ### gates
 - `merge_blocked`: **true** if any critical-severity finding OR if `reasons` contains blocking conditions
@@ -186,7 +220,7 @@ Prioritized action items: `immediate` (blocks merge), `short-term` (this sprint)
    - `confidence_multiplier`: `confidence`; add `+0.10` capped at `1.0` when `deterministic: true`
 3. Clamp each dimension score to 0-100.
 4. Inactive conditional dimensions (`database`, `concurrency`, `api_design`) receive no score and their weight is redistributed proportionally across active dimensions.
-5. `test_score` should use mutation score when available; otherwise combine assertion density, test existence, API test coverage, and E2E journey coverage.
+5. `test_score` combines test existence and test quality. Suggested split: 25% existence, 35% unit quality, 20% API test coverage, 15% E2E journey quality, 5% performance-test coverage. For performance-critical changes, raise performance-test coverage to 15% and reduce existence/unit weights proportionally.
 6. `risk_score = 100 - overall_score`, then increase by up to 20 points for critical/high findings that affect externally reachable paths.
 7. If `gates.merge_blocked` is true, cap `overall_score` at 40.
 

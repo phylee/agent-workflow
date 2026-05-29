@@ -17,6 +17,7 @@
         "Performance issue with string concatenation in loop is flagged",
         "Overall score and per-dimension summary scores are provided",
         "Each inspection includes category, severity, confidence, deterministic, evidence_chain, impact, and recommendation",
+        "Each inspection includes structured location and diff_hunk fields for PR annotation",
         "tool_runs and limitations are present even when tools are unavailable",
         "Recommendations are prioritized with effort estimates"
       ]
@@ -36,7 +37,7 @@
         "Use of 'var' is flagged as code quality issue",
         "Missing CSRF protection on DELETE endpoint is noted",
         "Security section is more detailed than other sections (focus_areas respected)",
-        "coverage.api_test and coverage.e2e are present in the result",
+        "coverage.test_existence, coverage.test_quality, coverage.api_test, coverage.e2e, and coverage.performance_test are present in the result",
         "Recommendations include specific remediation steps for XSS"
       ]
     },
@@ -59,6 +60,7 @@
         "String concatenation in loop performance issue is caught",
         "gates.merge_blocked is true with explicit reasons",
         "top_findings references the highest-risk inspection IDs",
+        "Each inspection includes structured location and diff_hunk fields for PR annotation",
         "Overall score and per-dimension summary scores are provided"
       ]
     }

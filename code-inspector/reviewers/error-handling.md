@@ -29,9 +29,12 @@ Examine how the code deals with failure — distinct from testing, this is about
 - Any leaks in early-return or exception paths?
 
 ### Language-Specific Signals
-- **Go**: `if err != nil { return err }` without wrapping, `_ = doSomething()`, `panic` in non-init code.
-- **Python**: bare `except:`, `except Exception:` that swallows KeyboardInterrupt, missing `finally`.
-- **JS/TS**: `.catch()` with empty handler, `try { await ... } catch {}`, unhandled Promise rejections.
+- **Python**: no compile-time checked errors. Focus on exception boundaries, bare `except:`, `except Exception` that swallows operational signals, missing `raise ... from e`, broad framework exception handlers that convert all failures to 500/200, context-manager cleanup, and async functions that hide sync failures.
+- **Go**: errors are values. Focus on ignored error returns (`_ = err`, `rows, _ :=`), missing `%w` wrapping, `panic` outside init/test/main boundary, `nil, nil` returns, missing `defer rows.Close()`, missing `ctx` propagation, and errors lost inside goroutines.
+- **JavaScript/TypeScript**: focus on unhandled Promise rejections, fire-and-forget promises without `.catch`, missing `await`, `try/catch` that returns partial success, lost `cause`, and Express/Nest/Koa async errors that bypass middleware.
+- **Java/Kotlin**: distinguish checked vs unchecked exceptions. Focus on swallowed `catch (Exception)`, transaction rollback behavior, `CompletableFuture`/coroutine exception propagation, missing `try-with-resources`, and framework exception mappers.
+- **Rust**: focus on `unwrap`/`expect` in production paths, discarded `Result`, lossy `map_err`, panics across FFI/thread boundaries, and missing context via `anyhow`/`thiserror`.
+- **Ruby/PHP**: focus on broad rescue/catch blocks, framework handlers that hide validation/auth errors, missing transaction rollback, and resource cleanup in ensure/finally.
 
 ## Output
 
@@ -47,6 +50,8 @@ Examine how the code deals with failure — distinct from testing, this is about
       "source": "llm-inference",
       "file": "",
       "line": 0,
+      "location": {"file": "", "start_line": 0, "end_line": 0},
+      "diff_hunk": "",
       "type": "swallowed_error|missing_context|bare_except|missing_retry|resource_leak|no_fallback",
       "evidence_chain": [],
       "impact": "",

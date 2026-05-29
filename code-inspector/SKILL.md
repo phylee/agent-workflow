@@ -20,6 +20,19 @@ Accept input in one of these forms:
   "framework": "nestjs",
   "change_type": "feature|bugfix|refactor|hotfix",
   "service_type": "api|frontend|worker|database|infra|library|cli",
+  "base_branch": "main",
+  "pr_description": "Why this change exists and what trade-offs were intentional.",
+  "reviewer_context": "initial|re-review",
+  "team_standards": {
+    "style_guide": "project-default",
+    "allowed_exceptions": ["TODO allowed in experimental modules"],
+    "required_checks": ["unit", "api", "e2e", "security"]
+  },
+  "context_budget": {
+    "max_context_files": 30,
+    "call_graph_depth": 2,
+    "max_file_bytes": 120000
+  },
   "git_diff": "...",
   "changed_files": ["src/auth/login.ts", "src/auth/middleware.ts"],
   "dependency_changes": ["added: rate-limiter@2.1.0"],
@@ -34,6 +47,8 @@ If the user provides this JSON, use it directly. Validate and fill gaps.
 
 **C) Raw `git diff` or file paths**: Read the diff/files directly, then auto-detect everything in Step 2.
 
+Use `pr_description` to understand intent, but do not let intent override a concrete correctness, security, data-loss, or compatibility issue. Use `reviewer_context: "re-review"` to verify whether previous findings were actually fixed and to avoid re-reporting already-resolved issues. Use `team_standards` to tune style-only findings; never use team preferences to suppress critical defects.
+
 ### Step 2: Gather Context (Beyond the Diff)
 
 A diff hunk alone is insufficient — surrounding code determines whether a change is safe. For each modified function/method:
@@ -43,6 +58,20 @@ A diff hunk alone is insufficient — surrounding code determines whether a chan
 3. **Find callees**: note what the modified function calls — if a dependency was also changed, check consistency.
 4. **Check imports/dependencies**: if new packages were added, note them. If existing imports were removed, verify they're unused elsewhere.
 5. **For API handlers**: grep for the route registration to understand middleware chain, auth guards, validation pipes applied to this handler.
+
+#### Context Budget
+
+Bound context gathering so reviews stay predictable on large repositories:
+- Default `max_context_files`: 30. Count changed files, direct test files, and caller/callee files.
+- Default `call_graph_depth`: 2. Depth 1 = direct callers/callees; depth 2 = callers of callers and callees of callees.
+- Default `max_file_bytes`: 120000 per file. If a file is larger, read only the relevant symbol, imports, nearby type definitions, and route/registration code.
+- Stop expanding when the budget is reached. Record skipped files or truncated reads in `limitations[]`.
+
+Without LSP or a language server, approximate dependency discovery with `rg`:
+- Search exact symbol names first.
+- For methods, search receiver/class + method where the language makes that possible.
+- For routes, search route path, handler name, controller class, and exported registration function.
+- Treat dynamic dispatch, reflection, monkey patching, dependency injection containers, and framework magic as lower-confidence call graph evidence.
 
 ### Step 3: Classify the Change
 
@@ -88,6 +117,8 @@ For each reviewer in `activated_reviewers`, read its file at `reviewers/<name>.m
 
 Apply the `service_type`'s extra checks from `references/classification-guide.md`.
 
+Before applying a reviewer, select the language/framework branch inside that reviewer. If the reviewer has no exact branch for the language, use the closest runtime family from `references/language-standards.md` and record the fallback in `limitations[]`. Do not apply a rule from one language/runtime to another without evidence; for example, Go goroutine leaks, JavaScript unhandled promises, Python swallowed exceptions, and Hibernate N+1 queries are different failure modes.
+
 #### Tool Policy
 
 Use deterministic tools when they are already available in the environment. Do not install dependencies, download rule packs, or make network calls unless the user explicitly approves it.
@@ -103,6 +134,8 @@ If a tool is unavailable or skipped, continue with prompt-based review and add a
 Every finding from every reviewer must include:
 - `confidence` (0.0-1.0): see `references/output-schema.md` for the 6-band scale — 0.95+ tool exact, 0.85-0.95 tool+LLM, 0.70-0.85 strong heuristic, 0.50-0.70 plausible, 0.30-0.50 speculative, <0.30 gut feel
 - `deterministic` (true/false): from a tool (Semgrep, ESLint, AST) = true; LLM inference = false
+- `location` with `file`, `start_line`, and `end_line`: use new-file line numbers for PR annotations when possible
+- `diff_hunk`: smallest relevant changed hunk when available, or `""` if the issue is outside the diff context
 - `evidence_chain` (ordered list): trace from input → dataflow → unsafe sink → impact
 - `metadata` (object, optional): reviewer-specific extra fields such as CVE IDs, contract type, mutation details, or database table/column names
 
@@ -115,6 +148,8 @@ Combine all reviewer findings into `inspections[]` — a flat list. Map reviewer
 | `message` / `description` / `mechanism` / `why_survived` | `impact` (what happens if not fixed) |
 | `suggestion` / `fix` / `remediation` / `test_to_add` / `migration_path` | `recommendation` (concrete fix) |
 | `file` + `line` (separate fields) | `file` + `line` (keep as-is) |
+| `file` + `start_line` + `end_line` | `location` |
+| raw changed hunk text | `diff_hunk` |
 | `location` (combined string) | `file` + `line` (parse apart if possible) |
 | `rule_id` | `source` (prepend tool name: `"eslint:no-unused-vars"`) |
 | `type` | `type` (keep as-is) |
