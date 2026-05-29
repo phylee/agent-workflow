@@ -105,7 +105,16 @@ The review output is a strongly-structured inspection report. Every finding must
       "reasons": [],
       "warnings": []
     },
-    "top_findings": [],
+    "top_findings": [
+      {
+        "id": "",
+        "title": "",
+        "severity": "critical|high|medium|low",
+        "category": "",
+        "file": "",
+        "line": 0
+      }
+    ],
     "overall_score": 0,
     "recommendations": [
       {
@@ -206,7 +215,7 @@ A flat list of all findings across all dimensions. Every inspection must include
 - `warnings[]`: non-blocking concerns that should be addressed (e.g., `low_assertion_density`, `console_log_in_production`)
 
 ### top_findings
-List the 1-5 most important inspection IDs, ordered by merge risk and impact.
+List the 1-5 most important findings as inline summary objects, ordered by merge risk and impact. `id` must reference an `inspections[].id`, but consumers should be able to render this section without joining back to `inspections[]`.
 
 ### overall_score
 0-100. Weighted across dimensions (see weight table below). Gate-blocked reviews cap at 40.
@@ -230,6 +239,8 @@ Prioritized action items: `immediate` (blocks merge), `short-term` (this sprint)
 
 ## Score Calculation
 
+Canonical scores are calculated from `inspections[]`. Reviewer-local `score` fields are diagnostic inputs only; use them as hints when a reviewer produced no machine-readable inspections, but do not let them override inspection-based scoring.
+
 1. Start each active dimension at 100.
 2. For every inspection, subtract `severity_weight * confidence_multiplier` from its dimension:
    - `critical`: 45
@@ -242,6 +253,20 @@ Prioritized action items: `immediate` (blocks merge), `short-term` (this sprint)
 5. `test_score` combines test existence and test quality. Suggested split: 25% existence, 35% unit quality, 20% API test coverage, 15% E2E journey quality, 5% performance-test coverage. For performance-critical changes, raise performance-test coverage to 15% and reduce existence/unit weights proportionally.
 6. `risk_score = 100 - overall_score`, then increase by up to 20 points for critical/high findings that affect externally reachable paths.
 7. If `gates.merge_blocked` is true, cap `overall_score` at 40.
+
+### Weight Normalization Example
+
+For an API PR that also activates `database` and `concurrency`, start with active base weights:
+
+`code_quality 15 + test_coverage 15 + performance 10 + database 10 + error_handling 15 + concurrency 10 + api_design 4 + logging 5 + security 16 = 100`
+
+Apply API adjustments: `security +5`, `api_design +5`, `code_quality -5`, `performance -5`.
+
+Adjusted weights become:
+
+`code_quality 10, test_coverage 15, performance 5, database 10, error_handling 15, concurrency 10, api_design 9, logging 5, security 21 = 100`
+
+If an adjustment references an inactive dimension, ignore that adjustment first, then normalize all active weights so the final total is exactly 100. For example, if `concurrency` is inactive, remove its 10 weight and scale the remaining adjusted active weights by `100 / active_weight_sum`.
 
 ## Confidence Guidelines
 

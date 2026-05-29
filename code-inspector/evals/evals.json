@@ -59,9 +59,63 @@
         "Complete lack of tests is reflected in test_coverage score",
         "String concatenation in loop performance issue is caught",
         "gates.merge_blocked is true with explicit reasons",
-        "top_findings references the highest-risk inspection IDs",
+        "top_findings contains inline objects with id, title, severity, category, file, and line",
         "Each inspection includes structured location and diff_hunk fields for PR annotation",
         "Overall score and per-dimension summary scores are provided"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review this multi-file Java API change for database and performance risks: evals/files/java/UserController.java, evals/files/java/UserService.java, evals/files/java/UserRepository.java, evals/files/java/OrderRepository.java. Treat it as an API service change and gather caller/callee context.",
+      "expected_output": "A structured JSON review that activates database, performance, api_design, test_coverage, and code_quality as relevant. It must identify the N+1 query pattern in UserService.listActiveUsersWithOrders because orderRepository.findByUserId is called inside a loop over users. The report should mention the caller chain from UserController.listActiveUsers to UserService.listActiveUsersWithOrders, recommend a bulk query/join fetch/entity graph approach, and flag missing tests for query-count or repository behavior.",
+      "files": [
+        "evals/files/java/UserController.java",
+        "evals/files/java/UserService.java",
+        "evals/files/java/UserRepository.java",
+        "evals/files/java/OrderRepository.java"
+      ],
+      "expectations": [
+        "Output is exactly one valid JSON object with code_inspector_result root key and no prose outside JSON",
+        "Classification includes Java and service_type api or library with database reviewer activated",
+        "N+1 query is identified as database or performance issue",
+        "Evidence chain references UserController -> UserService -> OrderRepository",
+        "Recommendation suggests batch loading, JOIN FETCH, entity graph, or a repository method accepting user IDs",
+        "coverage.test_existence and coverage.test_quality identify missing relevant tests",
+        "Each inspection includes structured location and diff_hunk fields"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Run a re-review comparing evals/files/review_delta_before.py to evals/files/review_delta_after.py. reviewer_context is re-review. Previous findings were hardcoded secret, MD5 password hashing, and os.system command injection.",
+      "expected_output": "A re-review JSON report that populates review_delta. The hardcoded secret should be marked resolved since it was removed. MD5 password hashing should remain unchanged/new in the current review. The os.system finding should be resolved or downgraded because subprocess.run with an argument list replaced shell execution, while any remaining path traversal concern should be reported separately if identified.",
+      "files": [
+        "evals/files/review_delta_before.py",
+        "evals/files/review_delta_after.py"
+      ],
+      "expectations": [
+        "review_delta.mode is re-review",
+        "review_delta.resolved_since_last includes the hardcoded secret finding",
+        "review_delta.unchanged_since_last or new_since_last includes MD5 password hashing",
+        "review_delta distinguishes resolved findings from current findings",
+        "top_findings contains inline objects rather than only IDs",
+        "Each inspection includes structured location and diff_hunk fields"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Review the multi-file TypeScript API change in evals/files/api/auth_routes.ts and evals/files/api/session_service.ts. Focus on API design, security, and interface tests.",
+      "expected_output": "A structured JSON review that gathers context across the route handler and service function. It must identify that the login API now requires otp, which is a breaking input contract change if existing clients do not send it. It should also flag sensitive internalUserId leakage in the response and missing API tests for validation/auth/negative cases.",
+      "files": [
+        "evals/files/api/auth_routes.ts",
+        "evals/files/api/session_service.ts"
+      ],
+      "expectations": [
+        "api_design reviewer is activated",
+        "Breaking input contract for required otp is identified",
+        "Sensitive internalUserId response field is flagged",
+        "Missing API tests for validation or auth cases are flagged",
+        "Evidence chain crosses auth_routes.ts and session_service.ts",
+        "top_findings contains inline objects with summary fields"
       ]
     }
   ]

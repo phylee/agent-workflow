@@ -1,6 +1,6 @@
 # Classification Guide
 
-**Weight adjustment rules**: All +/- adjustments apply to the base weight from the output-schema.md weight table. When a conditional dimension (database, concurrency, api_design) has 0% weight because no relevant code is present, its adjustment is moot — adjustments only take effect when the dimension is active (weight > 0%). When weight is redistributed from an inactive dimension, the active dimensions receive proportionally more weight, and their adjustments apply to the increased base.
+**Weight adjustment rules**: All +/- adjustments apply to the base weight from the output-schema.md weight table. When a conditional dimension (database, concurrency, api_design) has 0% weight because no relevant code is present, its adjustment is moot — adjustments only take effect when the dimension is active (weight > 0%). After applying service-type adjustments, normalize active weights so the final total is exactly 100. See `references/output-schema.md` for a complete API + database + concurrency normalization example.
 
 ## Service Type Detection
 

@@ -14,22 +14,22 @@ First, categorize what needs to be checked based on the changed code:
 | **Storage** | Plaintext secrets, hardcoded keys, weak cryptography (MD5, SHA1, DES) | Semgrep, Trivy |
 | **Network** | SSRF, open redirect, missing TLS, overly permissive CORS | Semgrep |
 | **Browser** | XSS (stored, reflected, DOM), CSP gaps, CSRF | Semgrep, CodeQL |
-| **Dependency** | Known CVEs, deprecated packages, supply chain risk | npm audit, pip audit, OSV, Snyk, Trivy |
+| **Dependency** | Known CVEs, deprecated packages, supply chain risk, license compliance | npm audit, pip audit, OSV, Snyk, Trivy, license scanners |
 | **Infra** | Secrets in config, weak IAM, exposed ports, missing encryption | Trivy, checkov |
 
 ## Step 2: Run SAST Tools
 
 Run the appropriate tools on the changed files. If a tool is not installed, note it as a limitation.
 
-| Language | Primary SAST | Secret Scanning | Dependency Check |
+| Language | Primary SAST | Secret Scanning | Dependency / License Check |
 |---|---|---|---|
-| Python | `semgrep --config=auto` | `detect-secrets` or `trufflehog` | `pip audit` |
-| JavaScript/TypeScript | `semgrep --config=auto` | `trufflehog` | `npm audit` |
-| Go | `semgrep --config=auto` or `gosec` | `gitleaks` | `go vulncheck` or `osv-scanner` |
-| Java | `semgrep --config=auto` or `spotbugs` | `trufflehog` | `mvn dependency:analyze` + OSV |
-| Rust | `cargo audit`, `semgrep --config=auto` | `gitleaks` | `cargo audit` or OSV |
-| Ruby | `brakeman` or `semgrep --config=auto` | `trufflehog` | `bundle audit` |
-| PHP | `psalm`/`phpstan` security rules or `semgrep --config=auto` | `trufflehog` | `composer audit` |
+| Python | `semgrep --config=auto` | `detect-secrets` or `trufflehog` | `pip audit`, `pip-licenses` |
+| JavaScript/TypeScript | `semgrep --config=auto` | `trufflehog` | `npm audit`, `license-checker` |
+| Go | `semgrep --config=auto` or `gosec` | `gitleaks` | `go vulncheck` or `osv-scanner`, `go-licenses` |
+| Java | `semgrep --config=auto` or `spotbugs` | `trufflehog` | `mvn dependency:analyze` + OSV, license plugin |
+| Rust | `cargo audit`, `semgrep --config=auto` | `gitleaks` | `cargo audit` or OSV, `cargo-deny` |
+| Ruby | `brakeman` or `semgrep --config=auto` | `trufflehog` | `bundle audit`, license_finder |
+| PHP | `psalm`/`phpstan` security rules or `semgrep --config=auto` | `trufflehog` | `composer audit`, license-checker |
 | C/C++ | CodeQL, clang-tidy security checks, cppcheck | `gitleaks` | OSV or distro/package scanner |
 | C# | Roslyn security analyzers, CodeQL | `trufflehog` | `dotnet list package --vulnerable` |
 | All | `trivy fs <dir>` | - | `trivy fs <dir>` |
@@ -64,6 +64,12 @@ For each finding:
 - **Severity** from the advisory
 - **Fixed version**: what version resolves it
 - **Exploitability**: is this dependency actually reachable from the changed code? A CVE in a dev-only tool is lower priority than a CVE in a runtime dependency handling user input.
+
+Also check license compliance when dependency files changed or team standards include allowed licenses:
+- Run an available license tool (`license-checker`, `pip-licenses`, `go-licenses`, `cargo-deny`, license_finder, FOSSA, or equivalent).
+- Flag license conflicts as `type: "license_policy_violation"` and `metadata.security_surface: "dependency"`.
+- Default severity is `low` for informational license drift, `medium` when a prohibited copyleft license is introduced into a distributed artifact, and `high` only when team policy explicitly treats the license as release-blocking.
+- Include `metadata.license`, `metadata.package`, and `metadata.policy` when known.
 
 ## Step 5: Classification-Based Output
 
@@ -106,15 +112,14 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
       "current_version": "",
       "fixed_version": "",
       "cve_id": "",
+      "license": "",
       "severity": "",
       "reachable": true,
       "advisory": ""
     }
   ],
-  "compliance": {
-    "owasp_top10": true,
-    "data_privacy": true
-  }
+  "owasp_violations": ["A03:Injection"],
+  "license_violations": []
 }
 ```
 
@@ -123,4 +128,6 @@ Group all findings (SAST + secret scan + dependency check) by category. Each fin
 - `metadata.security_surface`: maps each vulnerability to the security surface classification (input/auth/data/storage/network/browser/dependency/infra).
 - `source`: which tool found it (for auditability).
 - `reachable`: for dependency issues, is the vulnerable code path actually exercised by the changed code?
+- `owasp_violations`: explicit OWASP Top 10 categories implicated by current findings. Empty means no OWASP category was identified, not that the application is certified compliant.
+- `license_violations`: dependency license policy violations detected by license tools or dependency metadata. Empty means none were identified with available context.
 - Score capped at 70 if no SAST tools were run (AI-only assessment cannot be fully trusted).

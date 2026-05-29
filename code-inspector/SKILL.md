@@ -171,7 +171,7 @@ Read `references/output-schema.md` for the exact structure. Root key is `code_in
 
 ### Step 6: Summarize
 
-Return exactly one JSON object with root key `code_inspector_result`. Do not output prose before or after the JSON. Put the gate verdict in `gates.verdict`, the short explanation in `summary.human_summary`, and the most impactful findings in `top_findings[]`.
+Return exactly one JSON object with root key `code_inspector_result`. Do not output prose before or after the JSON. Put the gate verdict in `gates.verdict`, the short explanation in `summary.human_summary`, and inline summary objects for the most impactful findings in `top_findings[]`.
 
 ## Parameters
 
