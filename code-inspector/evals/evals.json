@@ -3,6 +3,8 @@
   "evals": [
     {
       "id": 1,
+      "scenario": "Python single-file security and code quality baseline",
+      "tags": ["python", "security", "code-quality", "single-file", "initial-review"],
       "prompt": "Review the file evals/files/user_service.py for code quality and security issues. Focus especially on security and code quality.",
       "expected_output": "A comprehensive JSON code review report identifying: SQL injection vulnerabilities in make_user and get_user, use of MD5 for password hashing, command injection in process_file via os.system, bare except clause in delete_user, hardcoded secret key, class naming violation (user_manager should be PascalCase), mutable default argument pattern, dead code (send_email, send_email_v2), string concatenation in loop (ProcessUsers), global DB connection, and overly complex function signature in get_admin_users. Output should be exactly one JSON object following the code_inspector_result schema, with inspections, gates, top_findings, recommendations, confidence, deterministic flags, evidence_chain, tool_runs, and limitations.",
       "files": ["evals/files/user_service.py"],
@@ -24,6 +26,8 @@
     },
     {
       "id": 2,
+      "scenario": "React frontend security and performance baseline",
+      "tags": ["javascript", "react", "frontend", "security", "performance", "initial-review"],
       "prompt": "Do a security-focused code review of evals/files/dashboard.js. This is a React admin panel component. Focus areas: security and performance.",
       "expected_output": "A structured JSON review report focused heavily on security and performance of a React dashboard component. Must identify: hardcoded API key in frontend code, dangerouslySetInnerHTML XSS vulnerability, innerHTML assignment in exportUsers, missing useEffect dependency array causing infinite fetch loop, fetching 10000 users at once with no pagination, using var instead of const/let, CSRF token missing from DELETE request, loose equality (==) usage, missing error handling in fetch calls, and missing key.id property access pattern issues. Performance and security findings should include exact locations, impact, remediation, confidence, deterministic flags, and evidence chains.",
       "files": ["evals/files/dashboard.js"],
@@ -43,6 +47,8 @@
     },
     {
       "id": 3,
+      "scenario": "Go backend comprehensive review with concurrency and missing tests",
+      "tags": ["go", "backend", "security", "concurrency", "test-coverage", "initial-review"],
       "prompt": "Run a comprehensive code review on evals/files/main.go. Cover all aspects: code quality, tests, performance, and security.",
       "expected_output": "A full JSON review of Go backend code. Must identify: SQL injection in getUsersHandler via fmt.Sprintf, command injection in backupHandler via user-controlled dbName, hardcoded database credentials and GitHub API token, goroutine leak in processItems (unbounded goroutine creation), error from db.Query ignored in getUsersHandler, returning nil/nil instead of error in getUserByID, panic in init instead of graceful error handling, string concatenation in loop in heavyProcess, deleteUser ignores returned error, and complete lack of tests. ExportUsersHandler has a shell command injection risk. Testing dimension should score very low since no tests exist, and gates should block merge for critical security issues.",
       "files": ["evals/files/main.go"],
@@ -66,6 +72,8 @@
     },
     {
       "id": 4,
+      "scenario": "Java multi-file N+1 with cross-file call graph",
+      "tags": ["java", "database", "n+1", "multi-file", "step2-context", "orm"],
       "prompt": "Review this multi-file Java API change for database and performance risks: evals/files/java/UserController.java, evals/files/java/UserService.java, evals/files/java/UserRepository.java, evals/files/java/OrderRepository.java. Treat it as an API service change and gather caller/callee context.",
       "expected_output": "A structured JSON review that activates database, performance, api_design, test_coverage, and code_quality as relevant. It must identify the N+1 query pattern in UserService.listActiveUsersWithOrders because orderRepository.findByUserId is called inside a loop over users. The report should mention the caller chain from UserController.listActiveUsers to UserService.listActiveUsersWithOrders, recommend a bulk query/join fetch/entity graph approach, and flag missing tests for query-count or repository behavior.",
       "files": [
@@ -86,25 +94,42 @@
     },
     {
       "id": 5,
+      "scenario": "Python re-review with resolved secret and remaining path traversal",
+      "tags": ["python", "security", "re-review", "review-delta", "path-traversal"],
       "prompt": "Run a re-review comparing evals/files/review_delta_before.py to evals/files/review_delta_after.py. reviewer_context is re-review. Previous findings were hardcoded secret, MD5 password hashing, and os.system command injection.",
-      "expected_output": "A re-review JSON report that populates review_delta. The hardcoded secret should be marked resolved since it was removed. MD5 password hashing should remain unchanged/new in the current review. The os.system finding should be resolved or downgraded because subprocess.run with an argument list replaced shell execution, while any remaining path traversal concern should be reported separately if identified.",
+      "expected_output": "A re-review JSON report that populates review_delta. The hardcoded secret should be marked resolved since it was removed. MD5 password hashing should remain unchanged/new in the current review. The os.system finding should be resolved or downgraded because subprocess.run with an argument list replaced shell execution. The remaining reports/ + name path construction should be reported as a path traversal risk when name is user-controlled.",
       "files": [
         "evals/files/review_delta_before.py",
         "evals/files/review_delta_after.py"
       ],
+      "structured_input": {
+        "reviewer_context": "re-review",
+        "previous_result": {
+          "code_inspector_result": {
+            "inspections": [
+              {"id": "SEC-001", "category": "security", "type": "hardcoded_secret", "location": {"file": "evals/files/review_delta_before.py", "start_line": 4, "end_line": 4}, "evidence_chain": ["SECRET_KEY is hardcoded in source"]},
+              {"id": "SEC-002", "category": "security", "type": "weak_hash_md5", "location": {"file": "evals/files/review_delta_before.py", "start_line": 8, "end_line": 8}, "evidence_chain": ["password is hashed with hashlib.md5"]},
+              {"id": "SEC-003", "category": "security", "type": "command_injection_shell", "location": {"file": "evals/files/review_delta_before.py", "start_line": 12, "end_line": 12}, "evidence_chain": ["name is concatenated into os.system command"]}
+            ]
+          }
+        }
+      },
       "expectations": [
         "review_delta.mode is re-review",
         "review_delta.resolved_since_last includes the hardcoded secret finding",
         "review_delta.unchanged_since_last or new_since_last includes MD5 password hashing",
         "review_delta distinguishes resolved findings from current findings",
+        "Path traversal risk from unsanitized name parameter is identified as a new or unchanged finding",
         "top_findings contains inline objects rather than only IDs",
         "Each inspection includes structured location and diff_hunk fields"
       ]
     },
     {
       "id": 6,
+      "scenario": "TypeScript multi-file login API contract and security review",
+      "tags": ["typescript", "api", "multi-file", "api-design", "security", "interface-tests"],
       "prompt": "Review the multi-file TypeScript API change in evals/files/api/auth_routes.ts and evals/files/api/session_service.ts. Focus on API design, security, and interface tests.",
-      "expected_output": "A structured JSON review that gathers context across the route handler and service function. It must identify that the login API now requires otp, which is a breaking input contract change if existing clients do not send it. It should also flag sensitive internalUserId leakage in the response and missing API tests for validation/auth/negative cases.",
+      "expected_output": "A structured JSON review that gathers context across the route handler and service function. It must identify that the login API now requires otp, which is a breaking input contract change if existing clients do not send it. It should also flag sensitive internalUserId leakage in the response, missing API tests for validation/auth/negative cases, and missing brute-force/rate-limit protection for the login endpoint.",
       "files": [
         "evals/files/api/auth_routes.ts",
         "evals/files/api/session_service.ts"
@@ -114,8 +139,42 @@
         "Breaking input contract for required otp is identified",
         "Sensitive internalUserId response field is flagged",
         "Missing API tests for validation or auth cases are flagged",
+        "Missing rate limiting or brute-force protection for login is flagged",
         "Evidence chain crosses auth_routes.ts and session_service.ts",
         "top_findings contains inline objects with summary fields"
+      ]
+    },
+    {
+      "id": 7,
+      "scenario": "Structured re-review from unified diff and previous_result",
+      "tags": ["python", "security", "re-review", "git-diff", "previous-result", "step2-context"],
+      "prompt": "Run code-inspector with structured input: language python, reviewer_context re-review, git_diff from evals/files/review_delta.patch, changed_files [\"evals/files/report_export.py\"], and previous_result containing prior findings for hardcoded_secret, weak_hash_md5, and command_injection_shell. Review the unified diff as the source of truth.",
+      "expected_output": "A re-review JSON report that consumes structured previous_result rather than relying on prose. It should populate review_delta by fingerprinting previous findings against the new diff: hardcoded_secret resolved, command_injection_shell resolved or downgraded, weak_hash_md5 still present, and path_traversal newly identified from reports/ + name.",
+      "files": [
+        "evals/files/review_delta.patch"
+      ],
+      "structured_input": {
+        "language": "python",
+        "reviewer_context": "re-review",
+        "git_diff_file": "evals/files/review_delta.patch",
+        "changed_files": ["evals/files/report_export.py"],
+        "previous_result": {
+          "code_inspector_result": {
+            "inspections": [
+              {"id": "SEC-001", "category": "security", "type": "hardcoded_secret", "location": {"file": "evals/files/report_export.py", "start_line": 4, "end_line": 4}, "evidence_chain": ["SECRET_KEY is hardcoded in source"]},
+              {"id": "SEC-002", "category": "security", "type": "weak_hash_md5", "location": {"file": "evals/files/report_export.py", "start_line": 8, "end_line": 8}, "evidence_chain": ["password is hashed with hashlib.md5"]},
+              {"id": "SEC-003", "category": "security", "type": "command_injection_shell", "location": {"file": "evals/files/report_export.py", "start_line": 12, "end_line": 12}, "evidence_chain": ["name is concatenated into os.system command"]}
+            ]
+          }
+        }
+      },
+      "expectations": [
+        "Input handling supports previous_result as structured prior code_inspector_result data",
+        "review_delta.mode is re-review",
+        "review_delta.resolved_since_last includes hardcoded_secret",
+        "review_delta.unchanged_since_last or new_since_last includes weak_hash_md5",
+        "Path traversal from reports/ + name is identified from the unified diff context",
+        "Each current inspection includes diff_hunk populated from the patch"
       ]
     }
   ]

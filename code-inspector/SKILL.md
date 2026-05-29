@@ -23,6 +23,7 @@ Accept input in one of these forms:
   "base_branch": "main",
   "pr_description": "Why this change exists and what trade-offs were intentional.",
   "reviewer_context": "initial|re-review",
+  "previous_result": null,
   "team_standards": {
     "style_guide": "project-default",
     "allowed_exceptions": ["TODO allowed in experimental modules"],
@@ -47,7 +48,7 @@ If the user provides this JSON, use it directly. Validate and fill gaps.
 
 **C) Raw `git diff` or file paths**: Read the diff/files directly, then auto-detect everything in Step 2.
 
-Use `pr_description` to understand intent, but do not let intent override a concrete correctness, security, data-loss, or compatibility issue. Use `reviewer_context: "re-review"` to verify whether previous findings were actually fixed and to avoid re-reporting already-resolved issues. Use `team_standards` to tune style-only findings; never use team preferences to suppress critical defects.
+Use `pr_description` to understand intent, but do not let intent override a concrete correctness, security, data-loss, or compatibility issue. Use `reviewer_context: "re-review"` with `previous_result` to verify whether previous findings were actually fixed and to avoid re-reporting already-resolved issues. `previous_result` should be the prior full `code_inspector_result` object, or `null` when unavailable. Use `team_standards` to tune style-only findings; never use team preferences to suppress critical defects.
 
 ### Step 2: Gather Context (Beyond the Diff)
 

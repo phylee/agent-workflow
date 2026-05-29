@@ -1,0 +1,19 @@
+diff --git a/evals/files/report_export.py b/evals/files/report_export.py
+index 1111111..2222222 100644
+--- a/evals/files/report_export.py
++++ b/evals/files/report_export.py
+@@ -1,12 +1,11 @@
+ import hashlib
+-import os
++import subprocess
+ 
+-SECRET_KEY = "prod-secret"
+-
+-
+ def hash_password(password):
+     return hashlib.md5(password.encode()).hexdigest()
+ 
+ 
+ def export_report(name):
+-    os.system("cat reports/" + name)
++    subprocess.run(["cat", "reports/" + name], check=True)
